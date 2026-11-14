@@ -1,7 +1,9 @@
 name: tak-home
 
-# Paste into the shared compose. Every service is in profile "tak":
-#   docker compose --profile tak up -d
+# Paste into the shared compose. Every service is in profile "tak", so a
+# plain `up` leaves this stack stopped. `up --profile tak` also starts
+# every service that has no profile. Name the services instead:
+#   docker compose up -d tak_certs tak_database tak_server tak_api tak_tiles tak_events tak_retention tak_media tak_postgis tak_store tak_pmtiles
 #
 # No host ports. SWAG joins network "tak" and proxies by service name:
 #   tak_api:5000, tak_tiles:5002, tak_pmtiles:80
@@ -9,6 +11,7 @@ name: tak-home
 # tak_server also answers as "takserver" so the certificate can use that name.
 # Underscores are a poor fit for a TLS DNS name.
 # TAK TLS stays on tak_server. SWAG stream proxies those ports without decrypting.
+# container_name matches the service name, so Compose does not prefix it.
 
 x-tak-env: &tak-env
   profiles: [tak]
@@ -19,6 +22,7 @@ x-tak-env: &tak-env
 
 services:
   tak_certs:
+    container_name: tak_certs
     image: takproductcenter/takserver-ca:5.8-RELEASE-92
     platform: linux/amd64
     <<: *tak-env
@@ -30,6 +34,7 @@ services:
       - tak_certs:/tak/certs/files
 
   tak_database:
+    container_name: tak_database
     image: takproductcenter/takserver-hardened-db:5.8-RELEASE-92
     platform: linux/amd64
     <<: *tak-env
@@ -44,6 +49,7 @@ services:
       retries: 30
 
   tak_server:
+    container_name: tak_server
     image: takproductcenter/takserver-hardened:5.8-RELEASE-92
     platform: linux/amd64
     <<: *tak-env
@@ -77,6 +83,7 @@ services:
       retries: 20
 
   tak_api:
+    container_name: tak_api
     profiles: [tak]
     networks: [tak]
     expose: ["5000"]
@@ -98,6 +105,7 @@ services:
       - ./tak-ca.pem:/etc/tak-ca.pem:ro
 
   tak_tiles:
+    container_name: tak_tiles
     profiles: [tak]
     networks: [tak]
     expose: ["5002"]
@@ -109,6 +117,7 @@ services:
       API_URL: http://tak_api:5000
 
   tak_events:
+    container_name: tak_events
     profiles: [tak]
     networks: [tak]
     image: ghcr.io/dfpc-coe/cloudtak-events:v13.113.0
@@ -121,6 +130,7 @@ services:
       - tak_store
 
   tak_retention:
+    container_name: tak_retention
     profiles: [tak]
     networks: [tak]
     image: ghcr.io/dfpc-coe/cloudtak-retention:v13.113.0
@@ -134,6 +144,7 @@ services:
       - tak_store
 
   tak_media:
+    container_name: tak_media
     profiles: [tak]
     networks: [tak]
     image: ghcr.io/dfpc-coe/media-infra:v9.10.0
@@ -141,6 +152,7 @@ services:
     env_file: ./config/cloudtak.env
 
   tak_postgis:
+    container_name: tak_postgis
     profiles: [tak]
     networks: [tak]
     image: postgis/postgis:17-3.4-alpine
@@ -153,6 +165,7 @@ services:
       - tak_cloudtak_db:/var/lib/postgresql/data
 
   tak_store:
+    container_name: tak_store
     profiles: [tak]
     networks: [tak]
     image: dxflrs/garage:v2.4.1
@@ -165,6 +178,7 @@ services:
       - tak_store_data:/var/lib/garage/data
 
   tak_pmtiles:
+    container_name: tak_pmtiles
     profiles: [tak]
     networks: [tak]
     expose: ["80"]

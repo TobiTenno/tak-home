@@ -44,12 +44,16 @@ A separate compose file uses the same network with `external: true`. Copy `swag/
 
 Running `./setup.sh` again with the same or a new parent name rewrites those hostnames and keeps the passwords already in `config/secrets.env` and `config/cloudtak.env`.
 
-From the directory that contains the compose file you passed to `-f`:
+From the directory that contains the compose file you passed to `-f`.
+
+`--profile tak` adds this stack to every service that has no profile. Name the services and Compose starts only those:
 
 ```sh
-docker compose -f docker-compose.yml --profile tak up -d tak_certs tak_database tak_server
-docker compose -f docker-compose.yml --profile tak cp tak_server:/opt/tak/certs/files/root-ca.pem tak-home/tak-ca.pem
-docker compose -f docker-compose.yml --profile tak up -d
+docker compose -f docker-compose.yml up -d tak_certs tak_database tak_server
+docker compose -f docker-compose.yml cp tak_server:/opt/tak/certs/files/root-ca.pem tak-home/tak-ca.pem
+docker compose -f docker-compose.yml up -d \
+  tak_certs tak_database tak_server tak_api tak_tiles tak_events \
+  tak_retention tak_media tak_postgis tak_store tak_pmtiles
 ```
 
 Tiles, on the server, when the chosen provider has a `fetch.sh`:
