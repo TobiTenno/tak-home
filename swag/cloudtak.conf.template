@@ -1,0 +1,47 @@
+# Written by setup.sh. Copy the result to SWAG: /config/nginx/site-confs/cloudtak.conf
+# Same compose network. proxy_pass uses the service names.
+#
+# @MAP_HOST@ is CloudTAK.
+# @TILES_HOST@ is CloudTAK's tile server.
+# Both are one label under the hostname passed to setup.sh.
+
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    server_name @MAP_HOST@;
+
+    include /config/nginx/ssl.conf;
+
+    client_max_body_size 0;
+
+    # Kansas / Missouri PMTiles. Same host as the UI.
+    # proxy_buffering must stay off or a range read pulls the whole file.
+    location /pmtiles/ {
+        include /config/nginx/proxy.conf;
+        proxy_buffering off;
+        proxy_request_buffering off;
+        proxy_set_header Range $http_range;
+        proxy_set_header If-Range $http_if_range;
+        proxy_pass http://tak_pmtiles:80/;
+    }
+
+    location / {
+        include /config/nginx/proxy.conf;
+        proxy_pass http://tak_api:5000;
+    }
+}
+
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    server_name @TILES_HOST@;
+
+    include /config/nginx/ssl.conf;
+
+    client_max_body_size 0;
+
+    location / {
+        include /config/nginx/proxy.conf;
+        proxy_pass http://tak_tiles:5002;
+    }
+}

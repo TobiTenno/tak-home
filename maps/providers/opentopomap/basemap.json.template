@@ -1,0 +1,10 @@
+{
+  "name": "OpenTopoMap",
+  "url": "https://tile.opentopomap.org/{$z}/{$x}/{$y}.png",
+  "protocol": "zxy",
+  "type": "raster",
+  "overlay": false,
+  "minzoom": 0,
+  "maxzoom": 17,
+  "attribution": "© OpenStreetMap contributors, SRTM | Map style: © OpenTopoMap (CC-BY-SA)"
+}

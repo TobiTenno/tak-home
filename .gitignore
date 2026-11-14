@@ -1,0 +1,10 @@
+.compose-file
+config/secrets.env
+config/takserver.env
+config/cloudtak.env
+tak-ca.pem
+swag/cloudtak.conf
+maps/basemap.json
+maps/provider
+maps/data/*.pmtiles
+datapackages/

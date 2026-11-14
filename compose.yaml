@@ -1,0 +1,171 @@
+name: tak-home
+
+# Paste into the shared compose. Every service is in profile "tak":
+#   docker compose --profile tak up -d
+#
+# SWAG reaches HTTP by service name: tak_api:5000, tak_tiles:5002, tak_pmtiles:80.
+# tak_server also answers as "takserver" so the certificate can use that name.
+# Underscores are a poor fit for a TLS DNS name.
+#
+# 8089, 8443, 8446, and 9001 stay published. They are TAK's own TLS.
+# SWAG must not terminate them.
+
+x-tak-env: &tak-env
+  profiles: [tak]
+  env_file:
+    - ./config/takserver.env
+    - ./config/secrets.env
+
+services:
+  tak_certs:
+    image: takproductcenter/takserver-ca:5.8-RELEASE-92
+    platform: linux/amd64
+    <<: *tak-env
+    user: root
+    entrypoint: ["/bin/bash", "/init/init-certs.sh"]
+    volumes:
+      - ./init:/init:ro
+      - ./config/federation:/federation:ro
+      - tak_certs:/tak/certs/files
+
+  tak_database:
+    image: takproductcenter/takserver-hardened-db:5.8-RELEASE-92
+    platform: linux/amd64
+    <<: *tak-env
+    entrypoint: ["/bin/bash", "/init/start-database.sh"]
+    volumes:
+      - ./init:/init:ro
+      - tak_db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+
+  tak_server:
+    image: takproductcenter/takserver-hardened:5.8-RELEASE-92
+    platform: linux/amd64
+    <<: *tak-env
+    entrypoint: ["/bin/bash", "/init/start-takserver.sh"]
+    networks:
+      default:
+        aliases:
+          - takserver
+    depends_on:
+      tak_certs:
+        condition: service_completed_successfully
+      tak_database:
+        condition: service_healthy
+    volumes:
+      - ./init:/init:ro
+      - ./config/federation:/federation:ro
+      - tak_certs:/opt/tak/certs/files
+      - tak_logs:/opt/tak/logs
+    ports:
+      - "8089:8089"
+      - "8443:8443"
+      - "8446:8446"
+      - "9001:9001"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -ks -o /dev/null -w '%{http_code}' --cert-type P12 --cert /opt/tak/certs/files/$${ADMIN_CERT_NAME}.p12:$${ADMIN_CERT_PASS} https://localhost:8443/Marti/api/missions | grep -q 200"]
+      start_period: 180s
+      interval: 15s
+      timeout: 10s
+      retries: 20
+
+  tak_api:
+    profiles: [tak]
+    image: ghcr.io/dfpc-coe/cloudtak-api:v13.113.0
+    restart: unless-stopped
+    env_file: ./config/cloudtak.env
+    environment:
+      NODE_EXTRA_CA_CERTS: /etc/tak-ca.pem
+    depends_on:
+      tak_server:
+        condition: service_healthy
+      tak_postgis:
+        condition: service_started
+      tak_store:
+        condition: service_started
+      tak_media:
+        condition: service_started
+    volumes:
+      - ./tak-ca.pem:/etc/tak-ca.pem:ro
+
+  tak_tiles:
+    profiles: [tak]
+    image: ghcr.io/dfpc-coe/cloudtak-pmtiles:v13.113.0
+    platform: linux/amd64
+    restart: unless-stopped
+    env_file: ./config/cloudtak.env
+    environment:
+      API_URL: http://tak_api:5000
+
+  tak_events:
+    profiles: [tak]
+    image: ghcr.io/dfpc-coe/cloudtak-events:v13.113.0
+    restart: unless-stopped
+    env_file: ./config/cloudtak.env
+    environment:
+      API_URL: http://tak_api:5000
+    depends_on:
+      - tak_api
+      - tak_store
+
+  tak_retention:
+    profiles: [tak]
+    image: ghcr.io/dfpc-coe/cloudtak-retention:v13.113.0
+    restart: unless-stopped
+    env_file: ./config/cloudtak.env
+    environment:
+      API_URL: http://tak_api:5000
+    depends_on:
+      - tak_api
+      - tak_postgis
+      - tak_store
+
+  tak_media:
+    profiles: [tak]
+    image: ghcr.io/dfpc-coe/media-infra:v9.10.0
+    restart: unless-stopped
+    env_file: ./config/cloudtak.env
+
+  tak_postgis:
+    profiles: [tak]
+    image: postgis/postgis:17-3.4-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: gis
+      POSTGRES_USER: docker
+      POSTGRES_PASSWORD: docker
+    volumes:
+      - tak_cloudtak_db:/var/lib/postgresql/data
+
+  tak_store:
+    profiles: [tak]
+    image: dxflrs/garage:v2.4.1
+    command: /garage server --single-node --default-bucket
+    restart: unless-stopped
+    env_file: ./config/cloudtak.env
+    volumes:
+      - ./garage.toml:/etc/garage.toml:ro
+      - tak_store_meta:/var/lib/garage/meta
+      - tak_store_data:/var/lib/garage/data
+
+  tak_pmtiles:
+    profiles: [tak]
+    image: nginx:1.28-alpine
+    restart: unless-stopped
+    volumes:
+      - ./maps/data:/usr/share/nginx/html:ro
+      - ./maps/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+
+volumes:
+  tak_certs:
+  tak_db:
+  tak_logs:
+  tak_cloudtak_db:
+  tak_store_meta:
+  tak_store_data:
