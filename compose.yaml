@@ -38,6 +38,11 @@ services:
     image: takproductcenter/takserver-hardened-db:5.8-RELEASE-92
     platform: linux/amd64
     <<: *tak-env
+    # CoreConfig.example.xml uses this hostname. An underscore is a poor DNS name.
+    networks:
+      tak:
+        aliases:
+          - tak-database
     entrypoint: ["/bin/bash", "/init/start-database.sh"]
     volumes:
       - ./init:/init:ro
