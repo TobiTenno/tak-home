@@ -1,5 +1,5 @@
 # Written by setup.sh. Copy the result to SWAG: /config/nginx/site-confs/cloudtak.conf
-# Same compose network. proxy_pass uses the service names.
+# Docker network "tak". proxy_pass uses the service names.
 #
 # @MAP_HOST@ is CloudTAK.
 # @TILES_HOST@ is CloudTAK's tile server.

@@ -20,7 +20,27 @@ That writes:
 | `tiles.example.com` | CloudTAK tiles |
 | `tak.example.com` | ATAK, port 8089 |
 
-`tak.example.com` is added to the server certificate. Point that name at the machine that publishes 8089. Point `map` and `tiles` at SWAG. The certificate must cover `map.example.com` and `tiles.example.com`.
+`tak.example.com` is added to the server certificate. Point `map`, `tiles`, and `tak` at SWAG. The certificate must cover `map.example.com` and `tiles.example.com`.
+
+This stack publishes no host ports. Every service is on Docker network `tak` (`name: tak`). Add the SWAG service to that network and publish the proxy ports there:
+
+```yaml
+services:
+  swag:
+    networks:
+      - tak
+    ports:
+      - "443:443"
+      - "8089:8089"
+      - "8443:8443"
+      - "8446:8446"
+      - "9001:9001"
+networks:
+  tak:
+    name: tak
+```
+
+A separate compose file uses the same network with `external: true`. Copy `swag/cloudtak.conf` into SWAG `site-confs` and `swag/tak-stream.conf` into SWAG `stream-confs`. The stream file forwards 8089, 8443, 8446, and 9001 to `tak_server` without decrypting them.
 
 Running `./setup.sh` again with the same or a new parent name rewrites those hostnames and keeps the passwords already in `config/secrets.env` and `config/cloudtak.env`.
 
@@ -31,8 +51,6 @@ docker compose -f docker-compose.yml --profile tak up -d tak_certs tak_database 
 docker compose -f docker-compose.yml --profile tak cp tak_server:/opt/tak/certs/files/root-ca.pem tak-home/tak-ca.pem
 docker compose -f docker-compose.yml --profile tak up -d
 ```
-
-Copy `swag/cloudtak.conf` into SWAG's `site-confs`.
 
 Tiles, on the server, when the chosen provider has a `fetch.sh`:
 

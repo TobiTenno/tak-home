@@ -3,15 +3,16 @@ name: tak-home
 # Paste into the shared compose. Every service is in profile "tak":
 #   docker compose --profile tak up -d
 #
-# SWAG reaches HTTP by service name: tak_api:5000, tak_tiles:5002, tak_pmtiles:80.
+# No host ports. SWAG joins network "tak" and proxies by service name:
+#   tak_api:5000, tak_tiles:5002, tak_pmtiles:80
+#   tak_server:8089, tak_server:8443, tak_server:8446, tak_server:9001
 # tak_server also answers as "takserver" so the certificate can use that name.
 # Underscores are a poor fit for a TLS DNS name.
-#
-# 8089, 8443, 8446, and 9001 stay published. They are TAK's own TLS.
-# SWAG must not terminate them.
+# TAK TLS stays on tak_server. SWAG stream proxies those ports without decrypting.
 
 x-tak-env: &tak-env
   profiles: [tak]
+  networks: [tak]
   env_file:
     - ./config/takserver.env
     - ./config/secrets.env
@@ -48,9 +49,14 @@ services:
     <<: *tak-env
     entrypoint: ["/bin/bash", "/init/start-takserver.sh"]
     networks:
-      default:
+      tak:
         aliases:
           - takserver
+    expose:
+      - "8089"
+      - "8443"
+      - "8446"
+      - "9001"
     depends_on:
       tak_certs:
         condition: service_completed_successfully
@@ -61,11 +67,6 @@ services:
       - ./config/federation:/federation:ro
       - tak_certs:/opt/tak/certs/files
       - tak_logs:/opt/tak/logs
-    ports:
-      - "8089:8089"
-      - "8443:8443"
-      - "8446:8446"
-      - "9001:9001"
     extra_hosts:
       - "host.docker.internal:host-gateway"
     healthcheck:
@@ -77,6 +78,8 @@ services:
 
   tak_api:
     profiles: [tak]
+    networks: [tak]
+    expose: ["5000"]
     image: ghcr.io/dfpc-coe/cloudtak-api:v13.113.0
     restart: unless-stopped
     env_file: ./config/cloudtak.env
@@ -96,6 +99,8 @@ services:
 
   tak_tiles:
     profiles: [tak]
+    networks: [tak]
+    expose: ["5002"]
     image: ghcr.io/dfpc-coe/cloudtak-pmtiles:v13.113.0
     platform: linux/amd64
     restart: unless-stopped
@@ -105,6 +110,7 @@ services:
 
   tak_events:
     profiles: [tak]
+    networks: [tak]
     image: ghcr.io/dfpc-coe/cloudtak-events:v13.113.0
     restart: unless-stopped
     env_file: ./config/cloudtak.env
@@ -116,6 +122,7 @@ services:
 
   tak_retention:
     profiles: [tak]
+    networks: [tak]
     image: ghcr.io/dfpc-coe/cloudtak-retention:v13.113.0
     restart: unless-stopped
     env_file: ./config/cloudtak.env
@@ -128,12 +135,14 @@ services:
 
   tak_media:
     profiles: [tak]
+    networks: [tak]
     image: ghcr.io/dfpc-coe/media-infra:v9.10.0
     restart: unless-stopped
     env_file: ./config/cloudtak.env
 
   tak_postgis:
     profiles: [tak]
+    networks: [tak]
     image: postgis/postgis:17-3.4-alpine
     restart: unless-stopped
     environment:
@@ -145,6 +154,7 @@ services:
 
   tak_store:
     profiles: [tak]
+    networks: [tak]
     image: dxflrs/garage:v2.4.1
     command: /garage server --single-node --default-bucket
     restart: unless-stopped
@@ -156,11 +166,17 @@ services:
 
   tak_pmtiles:
     profiles: [tak]
+    networks: [tak]
+    expose: ["80"]
     image: nginx:1.28-alpine
     restart: unless-stopped
     volumes:
       - ./maps/data:/usr/share/nginx/html:ro
       - ./maps/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+
+networks:
+  tak:
+    name: tak
 
 volumes:
   tak_certs:

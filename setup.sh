@@ -126,7 +126,7 @@ if [[ "$root" != "$src" ]]; then
   rm -rf "$root/maps/providers"
   cp -a "$src/maps/providers" "$root/maps/"
   cp "$src/maps/nginx.conf" "$src/maps/fetch.sh" "$root/maps/"
-  cp "$src/swag/cloudtak.conf.template" "$root/swag/"
+  cp "$src/swag/cloudtak.conf.template" "$src/swag/tak-stream.conf" "$root/swag/"
   chmod +x "$root/make-datapackage.sh" "$root/maps/fetch.sh"
   chmod +x "$root/maps/providers/"*/fetch.sh 2>/dev/null || true
 fi
@@ -234,10 +234,13 @@ echo "Basemap      $root/maps/basemap.json"
 echo "CloudTAK     https://$map_host"
 echo "Tiles        https://$tiles_host"
 echo "ATAK         $tak_host:8089"
-echo "SWAG file    $root/swag/cloudtak.conf"
+echo "Network      tak"
+echo "SWAG site    $root/swag/cloudtak.conf"
+echo "SWAG stream  $root/swag/tak-stream.conf"
 echo
-echo "Point DNS for $map_host and $tiles_host at SWAG."
-echo "Point DNS for $tak_host at the machine that publishes 8089."
+echo "Point DNS for $map_host, $tiles_host, and $tak_host at SWAG."
+echo "Join the SWAG service to Docker network tak."
+echo "Publish 443, 8089, 8443, 8446, and 9001 on SWAG. This stack publishes none."
 echo "The certificate must cover $map_host and $tiles_host before the first start."
 if [[ -f "maps/providers/$provider/fetch.sh" ]]; then
   echo "Fetch tiles with ./maps/fetch.sh"
