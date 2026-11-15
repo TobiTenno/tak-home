@@ -7,4 +7,6 @@ swag/cloudtak.conf
 maps/basemap.json
 maps/provider
 maps/data/*.pmtiles
+maps/data/extract.json
+maps/data/sprites/
 datapackages/

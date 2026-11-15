@@ -245,4 +245,8 @@ echo "SWAG Let's Encrypt: $map_host and $tiles_host only. Leave $tak_host out of
 echo "ATAK uses the TAK private CA on 8089. Do not put TAK certs in SWAG /config/keys."
 if [[ -f "maps/providers/$provider/fetch.sh" ]]; then
   echo "Fetch tiles with ./maps/fetch.sh"
+  if [[ "$provider" == trex ]]; then
+    echo "  trex: interactive NA region checklist, or --regions ks,mo [--elevation] [--sprites]"
+    echo "  sprites are proprietary; gitignored under maps/data/sprites/ (local deploy only)"
+  fi
 fi

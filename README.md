@@ -49,7 +49,24 @@ networks:
     name: tak
 ```
 
-A separate compose file uses the same network with `external: true`. Copy `swag/cloudtak.conf` into SWAG `site-confs` and `swag/tak-stream.conf` into SWAG `stream-confs`. The stream file forwards 8089, 8443, 8446, and 9001 to `tak_server` without decrypting them.
+A separate compose file uses the same network with `external: true`. Copy paths matter:
+
+| File | SWAG directory |
+| --- | --- |
+| `swag/cloudtak.conf` | `/config/nginx/site-confs/` |
+| `swag/tak-stream.conf` | `/config/nginx/stream-confs/` |
+
+Do not put `tak-stream.conf` in `site-confs`. That directory is HTTP only; nginx will reject `proxy_pass` there. The stream file forwards 8089, 8443, 8446, and 9001 to `tak_server` without decrypting them.
+
+SWAG dropped the stock stream include. In `/config/nginx/nginx.conf`, add a top-level block (next to `http`, not inside it):
+
+```nginx
+stream {
+    include /config/nginx/stream-confs/*.conf;
+}
+```
+
+Then `docker exec swag nginx -t` and restart SWAG. Confirm `netstat` inside SWAG shows 8089/8443/8446, not only 443.
 
 Running `./setup.sh` again with the same or a new parent name rewrites those hostnames and keeps the passwords already in `config/secrets.env` and `config/cloudtak.env`.
 
@@ -70,6 +87,16 @@ Tiles, on the server, when the chosen provider has a `fetch.sh`:
 ```sh
 ./maps/fetch.sh
 ```
+
+For `trex`, that opens a toggleable North America region checklist (default Kansas + Missouri), then asks about elevation and sprites. Non-interactive:
+
+```sh
+./maps/fetch.sh --regions ks,mo,ar
+./maps/fetch.sh --regions conus --elevation
+./maps/fetch.sh --sprites-only
+```
+
+Region ids live in `maps/providers/trex/regions.tsv` (states, provinces, `conus`, `na`, `ksmo`). Output is `maps/data/features.pmtiles` (and optional `elevation.pmtiles`). Sprites go to `maps/data/sprites/` and are gitignored — proprietary T.REX ARMS assets for local deploy only; do not commit or redistribute. CloudTAK does not auto-load them; use the helper script fetch writes under that folder.
 
 Enrollment package, after the server is up. Use the same name setup put on the certificate:
 

@@ -173,7 +173,11 @@ services:
   tak_store:
     container_name: tak_store
     profiles: [tak]
-    networks: [tak]
+    # boto3/aws-cli reject underscores in hostnames. Alias for S3 tools.
+    networks:
+      tak:
+        aliases:
+          - tak-store
     image: dxflrs/garage:v2.4.1
     command: /garage server --single-node --default-bucket
     restart: unless-stopped

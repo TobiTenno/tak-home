@@ -1,0 +1,74 @@
+# id	label	west,south,east,north
+# US states + DC (approx padded bounds). Presets at bottom.
+al	Alabama	-88.55,30.15,-84.85,35.05
+ak	Alaska	-179.20,51.20,-129.90,71.50
+az	Arizona	-114.90,31.25,-108.95,37.05
+ar	Arkansas	-94.70,32.95,-89.55,36.55
+ca	California	-124.55,32.45,-114.05,42.05
+co	Colorado	-109.15,36.95,-101.95,41.05
+ct	Connecticut	-73.75,40.95,-71.75,42.10
+de	Delaware	-75.85,38.40,-74.95,39.90
+dc	District of Columbia	-77.15,38.75,-76.85,39.05
+fl	Florida	-87.70,24.35,-79.95,31.05
+ga	Georgia	-85.70,30.30,-80.75,35.05
+hi	Hawaii	-160.30,18.85,-154.75,22.30
+id	Idaho	-117.30,41.95,-110.95,49.05
+il	Illinois	-91.60,36.95,-87.45,42.55
+in	Indiana	-88.15,37.75,-84.70,41.80
+ia	Iowa	-96.70,40.35,-90.05,43.55
+ks	Kansas	-102.15,36.95,-94.55,40.05
+ky	Kentucky	-89.60,36.55,-81.90,39.20
+la	Louisiana	-94.10,28.85,-88.75,33.05
+me	Maine	-71.15,43.00,-66.85,47.50
+md	Maryland	-79.55,37.85,-74.95,39.80
+ma	Massachusetts	-73.55,41.20,-69.85,42.95
+mi	Michigan	-90.50,41.65,-82.05,48.35
+mn	Minnesota	-97.30,43.45,-89.40,49.45
+ms	Mississippi	-91.75,30.10,-88.05,35.05
+mo	Missouri	-95.85,35.95,-89.05,40.65
+mt	Montana	-116.10,44.25,-104.00,49.05
+ne	Nebraska	-104.10,39.95,-95.25,43.05
+nv	Nevada	-120.05,34.95,-113.95,42.05
+nh	New Hampshire	-72.60,42.65,-70.65,45.35
+nj	New Jersey	-75.60,38.85,-73.85,41.40
+nm	New Mexico	-109.10,31.25,-102.95,37.05
+ny	New York	-79.80,40.45,-71.75,45.05
+nc	North Carolina	-84.35,33.75,-75.40,36.65
+nd	North Dakota	-104.10,45.85,-96.50,49.05
+oh	Ohio	-84.85,38.35,-80.45,42.00
+ok	Oklahoma	-103.10,33.55,-94.35,37.05
+or	Oregon	-124.60,41.95,-116.40,46.30
+pa	Pennsylvania	-80.55,39.65,-74.65,42.30
+ri	Rhode Island	-71.95,41.25,-71.05,42.05
+sc	South Carolina	-83.40,32.00,-78.45,35.25
+sd	South Dakota	-104.10,42.45,-96.40,46.00
+tn	Tennessee	-90.35,34.95,-81.60,36.75
+tx	Texas	-106.70,25.75,-93.45,36.55
+ut	Utah	-114.10,36.95,-109.00,42.05
+vt	Vermont	-73.50,42.70,-71.40,45.05
+va	Virginia	-83.70,36.50,-75.15,39.50
+wa	Washington	-124.85,45.50,-116.85,49.05
+wv	West Virginia	-82.70,37.15,-77.65,40.70
+wi	Wisconsin	-92.95,42.45,-86.70,47.10
+wy	Wyoming	-111.10,40.95,-104.00,45.05
+# Canada
+ab	Alberta	-120.05,48.95,-109.95,60.05
+bc	British Columbia	-139.10,48.25,-114.00,60.05
+mb	Manitoba	-102.05,48.95,-88.90,60.05
+nb	New Brunswick	-69.10,44.55,-63.70,48.10
+nl	Newfoundland and Labrador	-67.90,46.55,-52.55,60.40
+ns	Nova Scotia	-66.50,43.35,-59.65,47.10
+nt	Northwest Territories	-136.50,60.00,-101.95,70.05
+nu	Nunavut	-120.50,60.00,-60.95,83.15
+on	Ontario	-95.20,41.65,-74.30,56.90
+pe	Prince Edward Island	-64.50,45.90,-61.90,47.10
+qc	Quebec	-79.80,44.95,-57.05,62.60
+sk	Saskatchewan	-110.05,48.95,-101.30,60.05
+yt	Yukon	-141.05,60.00,-123.95,69.70
+# Mexico + Caribbean pocket
+mx	Mexico	-118.50,14.45,-86.65,32.75
+pr	Puerto Rico	-67.30,17.85,-65.15,18.55
+# Presets (union of large areas). Selecting a preset alone is enough.
+conus	Contiguous US (CONUS)	-125.00,24.30,-66.50,49.50
+na	Full North America	-170.00,14.00,-50.00,72.00
+ksmo	Kansas + Missouri	-102.10,35.95,-89.05,40.65
