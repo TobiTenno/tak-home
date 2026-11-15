@@ -167,12 +167,29 @@ print(f"  styles   {len(doc.get('styles') or [])}")
 
 if patch is not None:
     patch_path = out.rsplit(".", 1)[0] + ".patch.json"
-    json.dump(patch, open(patch_path, "w"))
-    open(patch_path, "a").write("\n")
-    # Also under maps/data so CloudTAK same-origin can fetch /pmtiles/<file>
-    data_patch = os.path.join(data_dir, os.path.basename(patch_path))
-    json.dump(patch, open(data_patch, "w"))
-    open(data_patch, "a").write("\n")
+    with open(patch_path, "w") as f:
+        json.dump(patch, f)
+        f.write("\n")
     print(f"wrote {patch_path}")
-    print(f"wrote {data_patch}  (fetch as /pmtiles/{os.path.basename(data_patch)})")
+
+    # Optional: maps/data for same-origin /pmtiles/ fetch. Often root-owned
+    # by the pmtiles container — skip if not writable.
+    data_patch = os.path.join(data_dir, os.path.basename(patch_path))
+    try:
+        os.makedirs(data_dir, exist_ok=True)
+        with open(data_patch, "w") as f:
+            json.dump(patch, f)
+            f.write("\n")
+        print(f"wrote {data_patch}  (fetch as /pmtiles/{os.path.basename(data_patch)})")
+    except OSError as err:
+        print(f"skip {data_patch}: {err}", file=sys.stderr)
+        print(
+            f"  copy manually:  cp {patch_path} {data_dir}/",
+            file=sys.stderr,
+        )
+        print(
+            f"  or:  sudo cp {patch_path} {data_dir}/"
+            f" && sudo chown \"$(id -u):$(id -g)\" {data_patch}",
+            file=sys.stderr,
+        )
 PY
