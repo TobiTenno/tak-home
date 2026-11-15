@@ -20,7 +20,16 @@ That writes:
 | `tiles.example.com` | CloudTAK tiles |
 | `tak.example.com` | ATAK, port 8089 |
 
-`tak.example.com` is added to the server certificate. Point `map`, `tiles`, and `tak` at SWAG. The certificate must cover `map.example.com` and `tiles.example.com`.
+`tak.example.com` is added to the TAK server certificate (private CA). Point `map`, `tiles`, and `tak` at SWAG.
+
+Two certificate worlds. Keep them apart:
+
+| Name | Port | Certificate |
+| --- | --- | --- |
+| `map.example.com`, `tiles.example.com` | 443 | SWAG Let's Encrypt |
+| `tak.example.com` | 8089, 8443, 8446, 9001 | TAK private CA (stream passthrough) |
+
+SWAG `SUBDOMAINS` / `EXTRA_DOMAINS` should list `map` and `tiles` only. Leave `tak` out of Let's Encrypt. Do not copy TAK `*.pem` / `*.p12` into SWAG `/config/keys`.
 
 This stack publishes no host ports. Every service is on Docker network `tak` (`name: tak`). Add the SWAG service to that network and publish the proxy ports there:
 

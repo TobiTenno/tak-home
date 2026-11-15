@@ -38,7 +38,8 @@ services:
     image: takproductcenter/takserver-hardened-db:5.8-RELEASE-92
     platform: linux/amd64
     <<: *tak-env
-    # CoreConfig.example.xml uses this hostname. An underscore is a poor DNS name.
+    # start-takserver.sh rewrites JDBC to tak_database.tak (container.network).
+    # Short name tak-database is stolen by NextDNS/Tailscale search domains.
     networks:
       tak:
         aliases:

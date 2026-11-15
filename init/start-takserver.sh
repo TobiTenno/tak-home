@@ -12,10 +12,14 @@ FILES=/opt/tak/certs/files
 #    plus the old ones while a rotation is under way. init-certs.sh builds it.
 #  - x509checkRevocation makes the server refuse enrolled certificates that
 #    have been revoked in the admin console, from the moment you revoke them.
+# Stock example uses host tak-database. Short names get a NextDNS/Tailscale
+# search domain and leave the Docker network. tak_database.tak is
+# container.network, so Docker DNS answers and search domains do not.
 sed -e "s|password=\"\"|password=\"${POSTGRES_PASSWORD}\"|" \
     -e "s|keystorePass=\"atakatak\"|keystorePass=\"${TAKSERVER_CERT_PASS}\"|g" \
     -e "s|truststorePass=\"atakatak\"|truststorePass=\"${CA_PASS}\"|g" \
     -e "s|truststoreFile=\"/opt/tak/certs/files/truststore-root.jks\"|truststoreFile=\"$FILES/truststore-active.jks\"|" \
+    -e "s|jdbc:postgresql://tak-database:5432|jdbc:postgresql://tak_database.tak:5432|" \
     -e "s|^    <auth>$|    <auth x509checkRevocation=\"true\">|" \
     CoreConfig.example.xml > CoreConfig.xml
 

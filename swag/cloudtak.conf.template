@@ -4,6 +4,10 @@
 # @MAP_HOST@ is CloudTAK.
 # @TILES_HOST@ is CloudTAK's tile server.
 # Both are one label under the hostname passed to setup.sh.
+#
+# SWAG Let's Encrypt covers these two names only. Do not put tak.<domain> in
+# SUBDOMAINS or EXTRA_DOMAINS. ATAK uses the TAK private CA on stream ports.
+# Do not copy TAK *.pem / *.p12 into /config/keys or ssl.conf.
 
 server {
     listen 443 ssl;
