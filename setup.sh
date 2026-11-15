@@ -125,9 +125,10 @@ if [[ "$root" != "$src" ]]; then
   rm -f "$root/maps/extract-ks-mo.sh" "$root/maps/ks-mo-features-basemap.json.template"
   rm -rf "$root/maps/providers"
   cp -a "$src/maps/providers" "$root/maps/"
-  cp "$src/maps/nginx.conf" "$src/maps/fetch.sh" "$root/maps/"
+  cp "$src/maps/nginx.conf" "$src/maps/fetch.sh" \
+    "$src/maps/publish-garage.sh" "$src/maps/publish_garage.py" "$root/maps/"
   cp "$src/swag/cloudtak.conf.template" "$src/swag/tak-stream.conf" "$root/swag/"
-  chmod +x "$root/make-datapackage.sh" "$root/maps/fetch.sh"
+  chmod +x "$root/make-datapackage.sh" "$root/maps/fetch.sh" "$root/maps/publish-garage.sh"
   chmod +x "$root/maps/providers/"*/fetch.sh 2>/dev/null || true
 fi
 

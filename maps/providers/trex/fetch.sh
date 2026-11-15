@@ -430,3 +430,5 @@ ls -lh "$maps/data"/*.pmtiles 2>/dev/null || true
 [[ -d $maps/data/sprites ]] && ls -lh "$maps/data/sprites"/topo-print.* 2>/dev/null || true
 echo "Meta: $EXTRACT_META"
 echo "Basemap file: $maps/basemap.json"
+echo "Hosted (Garage): ./maps/publish-garage.sh"
+echo "  keep old Hosted name: ./maps/publish-garage.sh --as ks-mo-features features.pmtiles"

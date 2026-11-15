@@ -98,6 +98,15 @@ For `trex`, that opens a toggleable North America region checklist (default Kans
 
 Region ids live in `maps/providers/trex/regions.tsv` (states, provinces, `conus`, `na`, `ksmo`). Output is `maps/data/features.pmtiles` (and optional `elevation.pmtiles`). Sprites go to `maps/data/sprites/` and are gitignored — proprietary T.REX ARMS assets for local deploy only; do not commit or redistribute. CloudTAK does not auto-load them; use the helper script fetch writes under that folder.
 
+Push extracts into Garage for CloudTAK **Hosted** tilesets (`tak_store` must be up):
+
+```sh
+./maps/publish-garage.sh
+./maps/publish-garage.sh --as ks-mo-features features.pmtiles
+```
+
+That writes `s3://cloudtak/public/<name>.pmtiles`. The `/pmtiles/` nginx path is separate; Hosted basemaps need the Garage copy.
+
 Enrollment package, after the server is up. Use the same name setup put on the certificate:
 
 ```sh
