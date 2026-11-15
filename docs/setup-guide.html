@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>tak-home setup guide</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Schibsted+Grotesk:wght@600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #12160f;
+      --bg-elev: #1a2116;
+      --panel: #222b1c;
+      --ink: #e8ecdf;
+      --muted: #9aa58c;
+      --line: #35402c;
+      --accent: #c4d35a;
+      --accent-dim: #8a9a3a;
+      --warn: #e0a04a;
+      --danger: #d4684a;
+      --ok: #6dbf8a;
+      --code-bg: #0d100b;
+      --radius: 6px;
+      --max: 46rem;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: "IBM Plex Sans", system-ui, sans-serif;
+      font-size: 1.05rem;
+      line-height: 1.55;
+      color: var(--ink);
+      background:
+        radial-gradient(ellipse 80% 50% at 10% -10%, #2a3820 0%, transparent 55%),
+        radial-gradient(ellipse 60% 40% at 100% 0%, #1e2a28 0%, transparent 50%),
+        var(--bg);
+      min-height: 100vh;
+    }
+
+    a { color: var(--accent); text-underline-offset: 3px; }
+    a:hover { color: #dce878; }
+
+    .wrap {
+      display: grid;
+      grid-template-columns: minmax(0, 14rem) minmax(0, var(--max));
+      gap: 2.5rem;
+      max-width: 68rem;
+      margin: 0 auto;
+      padding: 2rem 1.25rem 4rem;
+    }
+
+    nav {
+      position: sticky;
+      top: 1rem;
+      align-self: start;
+      font-size: 0.85rem;
+    }
+    nav .brand {
+      font-family: "Schibsted Grotesk", "IBM Plex Sans", sans-serif;
+      font-weight: 700;
+      font-size: 1.15rem;
+      letter-spacing: -0.02em;
+      color: var(--accent);
+      margin-bottom: 1rem;
+      display: block;
+      text-decoration: none;
+    }
+    nav ol {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      border-left: 1px solid var(--line);
+    }
+    nav a {
+      display: block;
+      padding: 0.35rem 0 0.35rem 0.85rem;
+      color: var(--muted);
+      text-decoration: none;
+      border-left: 2px solid transparent;
+      margin-left: -1px;
+    }
+    nav a:hover,
+    nav a[aria-current="true"] {
+      color: var(--ink);
+      border-left-color: var(--accent);
+    }
+    nav .progress {
+      margin-top: 1.25rem;
+      padding: 0.75rem;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      color: var(--muted);
+      font-size: 0.8rem;
+    }
+    nav .progress strong { color: var(--accent); font-weight: 600; }
+
+    main h1 {
+      font-family: "Schibsted Grotesk", "IBM Plex Sans", sans-serif;
+      font-size: clamp(1.8rem, 4vw, 2.4rem);
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      line-height: 1.15;
+      margin: 0 0 0.75rem;
+    }
+    main .lede {
+      color: var(--muted);
+      font-size: 1.1rem;
+      margin: 0 0 2rem;
+      max-width: 38rem;
+    }
+
+    section {
+      margin: 0 0 2.75rem;
+      padding-top: 0.5rem;
+      scroll-margin-top: 1rem;
+    }
+    section h2 {
+      font-family: "Schibsted Grotesk", sans-serif;
+      font-size: 1.35rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin: 0 0 0.85rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--line);
+    }
+    section h3 {
+      font-size: 1.05rem;
+      font-weight: 600;
+      margin: 1.5rem 0 0.5rem;
+      color: var(--accent);
+    }
+    p { margin: 0 0 1rem; }
+    ul, ol { margin: 0 0 1rem; padding-left: 1.25rem; }
+    li { margin-bottom: 0.35rem; }
+
+    .callout {
+      border: 1px solid var(--line);
+      border-left: 3px solid var(--accent-dim);
+      background: var(--bg-elev);
+      padding: 0.85rem 1rem;
+      border-radius: var(--radius);
+      margin: 0 0 1.25rem;
+      font-size: 0.95rem;
+    }
+    .callout.warn { border-left-color: var(--warn); }
+    .callout.danger { border-left-color: var(--danger); }
+    .callout strong { color: var(--ink); }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.92rem;
+      margin: 0 0 1.25rem;
+    }
+    th, td {
+      text-align: left;
+      padding: 0.5rem 0.65rem;
+      border-bottom: 1px solid var(--line);
+      vertical-align: top;
+    }
+    th { color: var(--muted); font-weight: 500; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.04em; }
+    code, kbd {
+      font-family: "IBM Plex Mono", ui-monospace, monospace;
+      font-size: 0.88em;
+      background: var(--code-bg);
+      padding: 0.1em 0.35em;
+      border-radius: 3px;
+    }
+
+    pre {
+      position: relative;
+      margin: 0 0 1.25rem;
+      padding: 0.9rem 1rem;
+      background: var(--code-bg);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      overflow-x: auto;
+      font-family: "IBM Plex Mono", ui-monospace, monospace;
+      font-size: 0.82rem;
+      line-height: 1.5;
+    }
+    pre button.copy {
+      position: absolute;
+      top: 0.4rem;
+      right: 0.4rem;
+      font: inherit;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 3px;
+      padding: 0.25rem 0.45rem;
+      cursor: pointer;
+    }
+    pre button.copy:hover { color: var(--ink); border-color: var(--accent-dim); }
+
+    .checklist {
+      list-style: none;
+      margin: 0 0 1.25rem;
+      padding: 0;
+    }
+    .checklist li {
+      display: flex;
+      gap: 0.65rem;
+      align-items: flex-start;
+      margin: 0 0 0.55rem;
+      padding: 0.65rem 0.75rem;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+    }
+    .checklist li.done {
+      border-color: #2f4a35;
+      background: #182019;
+    }
+    .checklist label {
+      flex: 1;
+      cursor: pointer;
+      color: var(--ink);
+    }
+    .checklist li.done label { color: var(--muted); text-decoration: line-through; text-decoration-color: var(--line); }
+    .checklist input {
+      margin-top: 0.25rem;
+      accent-color: var(--accent);
+      width: 1.05rem;
+      height: 1.05rem;
+      flex-shrink: 0;
+    }
+
+    .diagram {
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 0.78rem;
+      line-height: 1.45;
+      white-space: pre;
+      overflow-x: auto;
+      color: var(--muted);
+      background: var(--code-bg);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 1rem;
+      margin: 0 0 1.25rem;
+    }
+    .diagram .hl { color: var(--accent); }
+
+    footer {
+      margin-top: 3rem;
+      padding-top: 1.25rem;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+
+    @media (max-width: 860px) {
+      .wrap {
+        grid-template-columns: 1fr;
+        gap: 1.25rem;
+      }
+      nav {
+        position: static;
+      }
+      nav ol {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.25rem 0.75rem;
+        border: none;
+      }
+      nav a {
+        border: none;
+        margin: 0;
+        padding: 0.2rem 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <nav aria-label="Steps">
+      <a class="brand" href="#top">tak-home</a>
+      <ol>
+        <li><a href="#overview">Overview</a></li>
+        <li><a href="#copy-setup">1 · Copy &amp; setup</a></li>
+        <li><a href="#swag">2 · SWAG</a></li>
+        <li><a href="#bring-up">3 · Bring up</a></li>
+        <li><a href="#maps">4 · Maps</a></li>
+        <li><a href="#enroll">5 · ATAK enroll</a></li>
+        <li><a href="#auth">6 · Authelia SSO</a></li>
+        <li><a href="#migrate">7 · Migrate users</a></li>
+        <li><a href="#checks">Checklist</a></li>
+      </ol>
+      <div class="progress" id="progress">Checklist: <strong>0</strong> / 0</div>
+    </nav>
+
+    <main id="top">
+      <h1>Setup guide</h1>
+      <p class="lede">
+        Walk through a Docker-first CloudTAK + TAK Server stack behind SWAG,
+        optional T.Rex maps, then Authelia + LLDAP for SSO.
+        Checkboxes stick in this browser.
+      </p>
+
+      <section id="overview">
+        <h2>What you get</h2>
+        <table>
+          <thead><tr><th>Name</th><th>Use</th></tr></thead>
+          <tbody>
+            <tr><td><code>map.&lt;domain&gt;</code></td><td>CloudTAK web (Let’s Encrypt via SWAG)</td></tr>
+            <tr><td><code>tiles.&lt;domain&gt;</code></td><td>CloudTAK tiles / Hosted PMTiles</td></tr>
+            <tr><td><code>tak.&lt;domain&gt;</code></td><td>ATAK (8089+) — TAK private CA, stream passthrough</td></tr>
+            <tr><td><code>auth.&lt;domain&gt;</code></td><td>Authelia (+ optional <code>/auth-admin/</code>)</td></tr>
+          </tbody>
+        </table>
+        <div class="callout warn">
+          <strong>Two cert worlds.</strong> Map/tiles = SWAG LE. TAK ports = private CA.
+          Never copy TAK <code>*.pem</code> / <code>*.p12</code> into SWAG <code>/config/keys</code>.
+          Leave <code>tak</code> out of Let’s Encrypt <code>SUBDOMAINS</code>.
+        </div>
+        <div class="diagram"><span class="hl">browser</span>
+  │ HTTPS 443
+  ▼
+<span class="hl">SWAG</span> ── map → tak_api:5000
+     ├── tiles → tak_tiles:5002
+     ├── auth → Authelia (+ /auth-admin)
+     └── stream 8089/8443/… → tak_server (no decrypt)
+
+<span class="hl">Authelia</span> ← LDAP → <span class="hl">LLDAP</span>
+     │ OIDC
+     ▼
+<span class="hl">CloudTAK</span> (+ TAK CoreConfig oauth for cert enroll)</div>
+      </section>
+
+      <section id="copy-setup">
+        <h2>1 · Copy &amp; run setup</h2>
+        <p>On the server, copy this tree next to your shared compose file, then:</p>
+        <pre><code>./setup.sh example.com -f ../docker-compose.yml
+# or
+./setup.sh -h example.com --file ../docker-compose.yml
+./setup.sh example.com -p opentopomap   # default map provider is trex</code></pre>
+        <p>
+          <code>-f</code> picks the compose file to include. Generated files land in
+          <code>tak-home/</code> beside that file. Include path is
+          <code>tak-home/compose.yaml</code>.
+        </p>
+        <p>
+          Re-running setup rewrites hostnames and keeps secrets already in
+          <code>config/secrets.env</code> and <code>config/cloudtak.env</code>.
+        </p>
+        <ul class="checklist" data-section="setup"></ul>
+      </section>
+
+      <section id="swag">
+        <h2>2 · Wire SWAG</h2>
+        <p>Stack publishes <strong>no host ports</strong>. Everything lives on Docker network <code>tak</code>.</p>
+        <pre><code>services:
+  swag:
+    networks:
+      - tak
+    ports:
+      - "443:443"
+      - "8089:8089"
+      - "8443:8443"
+      - "8446:8446"
+      - "9001:9001"
+networks:
+  tak:
+    name: tak</code></pre>
+        <p>Copy generated confs:</p>
+        <table>
+          <thead><tr><th>File</th><th>SWAG path</th></tr></thead>
+          <tbody>
+            <tr><td><code>swag/cloudtak.conf</code></td><td><code>/config/nginx/site-confs/</code></td></tr>
+            <tr><td><code>swag/tak-stream.conf</code></td><td><code>/config/nginx/stream-confs/</code> — not site-confs</td></tr>
+          </tbody>
+        </table>
+        <p>In SWAG <code>nginx.conf</code>, add a top-level <code>stream</code> block (sibling of <code>http</code>):</p>
+        <pre><code>stream {
+    include /config/nginx/stream-confs/*.conf;
+}</code></pre>
+        <pre><code>docker exec swag nginx -t && docker exec swag nginx -s reload
+# confirm stream ports listening, not only 443
+docker exec swag netstat -tlnp | grep -E '443|8089|8443'</code></pre>
+        <div class="callout">
+          Map vhost <code>location /</code> must proxy to <code>tak_api.tak:5000</code>
+          (or <code>tak_api</code> on the same network). <code>/pmtiles/</code> → <code>tak_pmtiles</code>;
+          tiles host → <code>tak_tiles:5002</code>.
+        </div>
+        <p>
+          CSP for remote basemaps (T.Rex hillshade + Google) lives in
+          <code>config/cloudtak.env</code> as <code>NGINX_CSP_IMG_SRC</code> /
+          <code>NGINX_CSP_CONNECT_SRC</code>. Recreate <code>tak_api</code> after edits.
+        </p>
+        <ul class="checklist" data-section="swag"></ul>
+      </section>
+
+      <section id="bring-up">
+        <h2>3 · Bring up the stack</h2>
+        <p>From the directory that holds the compose file passed to <code>-f</code>:</p>
+        <pre><code>docker compose -f docker-compose.yml up -d tak_certs tak_database tak_server
+docker compose -f docker-compose.yml cp \
+  tak_server:/opt/tak/certs/files/root-ca.pem tak-home/tak-ca.pem
+docker compose -f docker-compose.yml up -d \
+  tak_certs tak_database tak_server tak_api tak_tiles tak_events \
+  tak_retention tak_media tak_postgis tak_store tak_pmtiles</code></pre>
+        <div class="callout warn">
+          <code>--profile tak</code> also starts every service with <strong>no</strong> profile.
+          Prefer naming services as above.
+        </div>
+        <p>Smoke:</p>
+        <pre><code>curl -sk -o /dev/null -w '%{http_code}\n' https://map.example.com/api/server
+# expect 401 without auth — means API is up through SWAG</code></pre>
+        <ul class="checklist" data-section="bringup"></ul>
+      </section>
+
+      <section id="maps">
+        <h2>4 · Maps (T.Rex / Hosted)</h2>
+        <p>On the server, when the provider has a <code>fetch.sh</code>:</p>
+        <pre><code>./maps/fetch.sh
+./maps/fetch.sh --regions ks,mo,ar
+./maps/fetch.sh --regions conus --elevation
+./maps/fetch.sh --sprites-only</code></pre>
+        <p>
+          Region ids: <code>maps/providers/trex/regions.tsv</code>.
+          Sprites are proprietary / gitignored — local deploy only.
+        </p>
+        <pre><code>./maps/render-basemap.sh --hosted \
+  --tiles-host tiles.example.com --features ks-mo-features
+./maps/publish-garage.sh
+./maps/publish-garage.sh --as ks-mo-features features.pmtiles</code></pre>
+        <div class="callout">
+          Hosted URL tile vars must be <code>{$z}/{$x}/{$y}</code> (dollar), not
+          <code>{z}</code>. After Garage republish, script restarts <code>tak_tiles</code>
+          so stale ETags do not 412/500. Protocol for Garage PMTiles in CloudTAK =
+          <code>hosted</code> + <code>vector</code> (not a <code>pmtiles</code> enum).
+        </div>
+        <ul class="checklist" data-section="maps"></ul>
+      </section>
+
+      <section id="enroll">
+        <h2>5 · ATAK enrollment</h2>
+        <p>After TAK is up, build a datapackage with the same DNS name on the cert:</p>
+        <pre><code>./make-datapackage.sh tak.example.com</code></pre>
+        <p>Install the package in ATAK; trust the TAK private CA (not the LE cert).</p>
+        <ul class="checklist" data-section="enroll"></ul>
+      </section>
+
+      <section id="auth">
+        <h2>6 · Authelia + LLDAP SSO</h2>
+        <p>
+          Goal: stop managing CloudTAK passwords by hand. Authelia = login / 2FA / OIDC.
+          LLDAP = users &amp; groups. Optional <code>authelia-admin</code> at
+          <code>https://auth.&lt;domain&gt;/auth-admin/</code> on the same host.
+        </p>
+
+        <h3>6a · Directory + Authelia</h3>
+        <ol>
+          <li>Run <strong>LLDAP</strong> on the <code>tak</code> (or shared) network; create base DN and an Authelia bind user.</li>
+          <li>Run <strong>Authelia</strong> with <code>authentication_backend.ldap.implementation: lldap</code>.</li>
+          <li>Point SWAG <code>auth.&lt;domain&gt;</code> at Authelia; proxy <code>/auth-admin/</code> to authelia-admin if used.</li>
+          <li>Enable Authelia <strong>OIDC provider</strong>; register confidential client <code>cloudtak</code>.</li>
+        </ol>
+        <pre><code># Authelia OIDC client (sketch)
+identity_providers:
+  oidc:
+    clients:
+      - client_id: 'cloudtak'
+        client_name: 'CloudTAK'
+        client_secret: '$pbkdf2-sha512$...'   # hashed secret
+        public: false
+        authorization_policy: 'two_factor'
+        redirect_uris:
+          - 'https://map.example.com/api/login/oidc/callback'
+        scopes: ['openid', 'profile', 'email']
+        grant_types: ['authorization_code']
+        response_types: ['code']
+        token_endpoint_auth_method: 'client_secret_basic'</code></pre>
+        <p>Discovery URL:</p>
+        <pre><code>https://auth.example.com/.well-known/openid-configuration</code></pre>
+
+        <h3>6b · CloudTAK Admin → Login</h3>
+        <table>
+          <thead><tr><th>Field</th><th>Value</th></tr></thead>
+          <tbody>
+            <tr><td>Enable OIDC SSO</td><td>on</td></tr>
+            <tr><td>Enforce SSO</td><td><strong>off</strong> until tested</td></tr>
+            <tr><td>Provider Name</td><td>e.g. Authelia</td></tr>
+            <tr><td>OIDC Discovery URL</td><td>Authelia <code>.well-known/openid-configuration</code></td></tr>
+            <tr><td>Client ID / Secret</td><td>match Authelia client (plaintext secret in CloudTAK)</td></tr>
+            <tr><td>Redirect / Scopes</td><td>leave blank for defaults</td></tr>
+          </tbody>
+        </table>
+        <div class="callout danger">
+          IdP <strong>must</strong> return an <code>email</code> claim. CloudTAK username = email.
+          Wrong email → wrong cert identity / groups.
+        </div>
+
+        <h3>6c · TAK Server CoreConfig</h3>
+        <p>Needed so <em>new</em> SSO users can enroll a cert (CloudTAK presents the IdP token to TAK):</p>
+        <pre><code>&lt;oauth usernameClaim="email"&gt;
+  &lt;openIdDiscoveryConfiguration
+    name="cloudtak-sso"
+    clientId="cloudtak"
+    secret="SAME_PLAINTEXT_SECRET"
+    redirectUri="https://map.example.com/api/login/oidc/callback"
+    configurationUri="https://auth.example.com/.well-known/openid-configuration"/&gt;
+&lt;/oauth&gt;</code></pre>
+        <p>Restart <code>tak_server</code> after. TAK must reach Authelia discovery; document must include <code>scopes_supported</code>.</p>
+        <div class="callout warn">
+          Do <strong>not</strong> rely on Authelia forward-auth alone for CloudTAK —
+          that only gates nginx; CloudTAK still needs its own OIDC session.
+          ATAK keeps using client certs; Authelia does not replace 8089 cookies.
+        </div>
+        <p>
+          Official notes:
+          <a href="https://docs.cloudtak.io/admin/#single-sign-on-oidc">CloudTAK OIDC</a>,
+          <a href="https://www.authelia.com/integration/ldap/lldap/">Authelia ↔ LLDAP</a>.
+          Auth is a <strong>separate stack</strong> from <code>tak-home</code> (LLDAP/Authelia
+          not in this compose). Plan: <code>docs/AUTH-PLAN.md</code>. Move checklist:
+          <code>docs/DEV-MOVE.md</code>.
+        </p>
+        <h3>Other apps</h3>
+        <p>
+          Same auth stack can add more OIDC clients for other services. Register client,
+          redirect URI, scopes per that app’s docs; gate with an Authelia group/policy.
+          Prefer the app’s native OIDC over forward-auth alone when it has its own session.
+        </p>
+        <ul class="checklist" data-section="auth"></ul>
+      </section>
+
+      <section id="migrate">
+        <h2>7 · Migrate existing users</h2>
+        <table>
+          <thead><tr><th>Thing</th><th>Migrate?</th></tr></thead>
+          <tbody>
+            <tr><td>Emails / usernames (CloudTAK profiles)</td><td>Yes → LLDAP <code>uid</code> + <code>mail</code></td></tr>
+            <tr><td>Groups / display names</td><td>Yes</td></tr>
+            <tr><td>CloudTAK certs, overlays, data</td><td>Stay in CloudTAK DB</td></tr>
+            <tr><td>Passwords</td><td><strong>No</strong> — LLDAP uses OPAQUE; reset once</td></tr>
+            <tr><td>Existing ATAK client certs</td><td>Keep working</td></tr>
+          </tbody>
+        </table>
+        <ol>
+          <li>Export CloudTAK usernames/emails from Postgres <code>profiles</code>.</li>
+          <li>Create matching LLDAP users (<code>mail</code> identical).</li>
+          <li>Temp password or invite / reset flow.</li>
+          <li>Test OIDC with enforce <strong>off</strong>; same email → existing CloudTAK profile.</li>
+          <li>Then set <code>oidc::enforced</code>.</li>
+        </ol>
+        <div class="callout">
+          Locked out after enforce? Admin token
+          <code>PUT /api/config</code> with <code>{"oidc::enforced": false}</code>,
+          or delete that settings row in the CloudTAK DB.
+        </div>
+        <ul class="checklist" data-section="migrate"></ul>
+      </section>
+
+      <section id="checks">
+        <h2>Master checklist</h2>
+        <p>All steps above roll up here. Clear progress:</p>
+        <p>
+          <button type="button" id="reset-checks" style="font:inherit;cursor:pointer;background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:var(--radius);padding:0.45rem 0.75rem;">
+            Reset all checkboxes
+          </button>
+        </p>
+        <ul class="checklist" data-section="master" id="master-list"></ul>
+      </section>
+
+      <footer>
+        Companion to <code>README.md</code> in this repo. Auth compose stubs may land later;
+        this page is the intended operator path. Replace <code>example.com</code> with your parent domain.
+      </footer>
+    </main>
+  </div>
+
+  <script>
+    const STEPS = {
+      setup: [
+        "Copied tak-home onto the server next to the shared compose file",
+        "Ran ./setup.sh &lt;domain&gt; -f … (secrets generated / preserved)",
+        "Chose map provider (-p trex default, or opentopomap)",
+      ],
+      swag: [
+        "SWAG joined Docker network tak; published 443 + TAK stream ports",
+        "Installed cloudtak.conf in site-confs and tak-stream.conf in stream-confs",
+        "Added top-level stream { include … } in nginx.conf; nginx -t OK",
+        "DNS for map + tiles (+ auth) points at SWAG; tak left out of LE subdomains",
+        "CSP env set if using T.Rex CDN / Google; tak_api recreated",
+      ],
+      bringup: [
+        "tak_certs → tak_database → tak_server healthy",
+        "Copied root-ca.pem; started api/tiles/events/…/store/pmtiles",
+        "https://map…/api/server returns 401 (API reachable)",
+      ],
+      maps: [
+        "Fetched / rendered basemap (if using local/hosted tiles)",
+        "Published to Garage; Hosted basemap uses {$z} and protocol hosted",
+        "Map paints T.Rex (or chosen provider) in CloudTAK",
+      ],
+      enroll: [
+        "make-datapackage.sh with tak.&lt;domain&gt;",
+        "ATAK connected with package + TAK CA trust",
+      ],
+      auth: [
+        "LLDAP up; users can be created in its UI (or authelia-admin)",
+        "Authelia LDAP → LLDAP; OIDC client cloudtak registered",
+        "SWAG serves auth.&lt;domain&gt; (and /auth-admin/ if used)",
+        "CloudTAK OIDC enabled (enforce still off); SSO login works",
+        "CoreConfig oauth added; tak_server restarted; new SSO user gets a cert",
+      ],
+      migrate: [
+        "Existing emails created in LLDAP with matching mail",
+        "Users completed one password reset / invite",
+        "SSO hits existing CloudTAK profiles; then enforce SSO if desired",
+      ],
+    };
+
+    const STORAGE_KEY = "tak-home-setup-guide-v1";
+    const state = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+    /** @type {Map<string, HTMLInputElement[]>} */
+    const inputsByKey = new Map();
+
+    function save() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      updateProgress();
+    }
+
+    function updateProgress() {
+      const keys = [...inputsByKey.keys()];
+      const done = keys.filter((k) => state[k]).length;
+      const el = document.getElementById("progress");
+      el.innerHTML = `Checklist: <strong>${done}</strong> / ${keys.length}`;
+    }
+
+    function setChecked(key, checked) {
+      state[key] = checked;
+      for (const input of inputsByKey.get(key) || []) {
+        input.checked = checked;
+        input.closest("li")?.classList.toggle("done", checked);
+      }
+      save();
+    }
+
+    function renderList(ul, section, items) {
+      items.forEach((html, i) => {
+        const key = `${section}-${i}`;
+        const id = `chk-${key}-${ul.dataset.section}`;
+        const li = document.createElement("li");
+        const input = document.createElement("input");
+        input.type = "checkbox";
+        input.id = id;
+        input.dataset.key = key;
+        input.checked = !!state[key];
+        if (input.checked) li.classList.add("done");
+        const label = document.createElement("label");
+        label.htmlFor = id;
+        label.innerHTML = html;
+        input.addEventListener("change", () => setChecked(key, input.checked));
+        if (!inputsByKey.has(key)) inputsByKey.set(key, []);
+        inputsByKey.get(key).push(input);
+        li.append(input, label);
+        ul.append(li);
+      });
+    }
+
+    for (const [section, items] of Object.entries(STEPS)) {
+      const ul = document.querySelector(`ul.checklist[data-section="${section}"]`);
+      if (ul) renderList(ul, section, items);
+    }
+    const masterUl = document.getElementById("master-list");
+    for (const [section, items] of Object.entries(STEPS)) {
+      renderList(masterUl, section, items);
+    }
+
+    document.getElementById("reset-checks").addEventListener("click", () => {
+      if (!confirm("Clear all checklist progress?")) return;
+      localStorage.removeItem(STORAGE_KEY);
+      location.reload();
+    });
+
+    document.querySelectorAll("pre").forEach((pre) => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "copy";
+      btn.textContent = "Copy";
+      btn.addEventListener("click", async () => {
+        const code = pre.querySelector("code");
+        await navigator.clipboard.writeText(code ? code.innerText : pre.innerText);
+        btn.textContent = "Copied";
+        setTimeout(() => (btn.textContent = "Copy"), 1200);
+      });
+      pre.append(btn);
+    });
+
+    const navLinks = [...document.querySelectorAll("nav ol a")];
+    const sections = navLinks.map((a) => document.querySelector(a.getAttribute("href"))).filter(Boolean);
+    const io = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((e) => {
+          if (!e.isIntersecting) return;
+          navLinks.forEach((a) => a.removeAttribute("aria-current"));
+          const link = navLinks.find((a) => a.getAttribute("href") === `#${e.target.id}`);
+          if (link) link.setAttribute("aria-current", "true");
+        });
+      },
+      { rootMargin: "-20% 0px -60% 0px", threshold: 0 }
+    );
+    sections.forEach((s) => io.observe(s));
+    updateProgress();
+  </script>
+</body>
+</html>
