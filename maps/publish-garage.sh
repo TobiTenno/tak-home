@@ -20,6 +20,7 @@ prefix=public
 
 as_name=
 files=()
+restart_tiles=1
 
 usage() {
   cat <<'EOF'
@@ -27,10 +28,14 @@ Usage: publish-garage.sh [options] [file.pmtiles ...]
 
   (no files)     Upload every *.pmtiles under maps/data/
   --as NAME      Object key public/NAME.pmtiles (one file only)
+  --no-restart   Do not restart tak_tiles after upload
   -h, --help     Show help
 
 Reads AWS_S3_* from config/cloudtak.env. Uploads via docker on network tak
 to http://tak-store:3900 (boto3 rejects hostnames with underscores).
+
+Restarts tak_tiles by default so its in-memory PMTiles/ETag cache drops
+the old object (stale IfMatch → Garage 412 → tiles 500).
 EOF
 }
 
@@ -43,6 +48,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --as=*)
       as_name=${1#--as=}
+      shift
+      ;;
+    --no-restart)
+      restart_tiles=0
       shift
       ;;
     -h|--help)
@@ -145,8 +154,20 @@ docker run --rm --network "$network" \
   bash -c 'pip install -q boto3 && python /publish_garage.py "$@"' \
   bash "${pairs[@]}"
 
+if [[ $restart_tiles -eq 1 ]]; then
+  if docker inspect tak_tiles >/dev/null 2>&1; then
+    echo
+    echo "Restart tak_tiles (drop stale PMTiles/ETag cache)..."
+    docker restart tak_tiles >/dev/null
+    echo "tak_tiles restarted"
+  else
+    echo
+    echo "warn: tak_tiles not running — restart it after upload or TileJSON may 500 (412 ETag)"
+  fi
+fi
+
 echo
 echo "Hosted basemap URL pattern:"
-echo "  https://tiles.<domain>/tiles/public/<name>/tiles/{z}/{x}/{y}.mvt"
+echo "  https://tiles.<domain>/tiles/public/<name>/tiles/{\$z}/{\$x}/{\$y}.mvt"
 echo "where <name> is the file basename without .pmtiles (e.g. features)."
 echo "If you still use the old Hosted name:  ./maps/publish-garage.sh --as ks-mo-features features.pmtiles"

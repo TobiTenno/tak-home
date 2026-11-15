@@ -340,22 +340,18 @@ extract() {
 
 update_basemap() {
   local labels=$1
-  local basemap=$maps/basemap.json
-  [[ -f "$basemap" ]] || return 0
-  python3 - "$basemap" "$FEATURES_OUT" "$labels" <<'PY'
-import json, sys
-path, features, labels = sys.argv[1:4]
-doc = json.load(open(path))
-url = doc.get("url", "")
-if "/pmtiles/" in url:
-    base = url.rsplit("/", 1)[0]
-    doc["url"] = f"{base}/{features}"
-doc["name"] = f"T.Rex {labels}" if labels else doc.get("name", "T.Rex")
-json.dump(doc, open(path, "w"), indent=2)
-open(path, "a").write("\n")
-print(f"Basemap URL -> {doc['url']}")
-print(f"Basemap name -> {doc['name']}")
-PY
+  local render=$maps/render-basemap.sh
+  if [[ ! -x "$render" ]]; then
+    echo "skip basemap render (missing $render)" >&2
+    return 0
+  fi
+  # Full rebuild from template — do not half-patch an old JSON.
+  local stem=${FEATURES_OUT%.pmtiles}
+  "$render" --pmtiles --features "$stem" --name "T.Rex ${labels}" || true
+  if [[ -f $maps/basemap.hosted.json ]] || grep -q 'tiles\.' "$maps/basemap.json" 2>/dev/null; then
+    "$render" --hosted --features ks-mo-features --name "T.Rex ${labels}" \
+      --out "$maps/basemap.hosted.json" || true
+  fi
 }
 
 write_meta() {

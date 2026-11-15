@@ -98,6 +98,15 @@ For `trex`, that opens a toggleable North America region checklist (default Kans
 
 Region ids live in `maps/providers/trex/regions.tsv` (states, provinces, `conus`, `na`, `ksmo`). Output is `maps/data/features.pmtiles` (and optional `elevation.pmtiles`). Sprites go to `maps/data/sprites/` and are gitignored — proprietary T.REX ARMS assets for local deploy only; do not commit or redistribute. CloudTAK does not auto-load them; use the helper script fetch writes under that folder.
 
+Rebuild basemap JSON from the template on the **server** (generated `*.hosted*.json` is gitignored — do not expect it from git):
+
+```sh
+./maps/render-basemap.sh --map-host map.example.com
+./maps/render-basemap.sh --hosted --tiles-host tiles.example.com --features ks-mo-features
+# writes maps/basemap.hosted.json + maps/basemap.hosted.patch.json
+# and maps/data/basemap.hosted.patch.json → https://map…/pmtiles/basemap.hosted.patch.json
+```
+
 Push extracts into Garage for CloudTAK **Hosted** tilesets (`tak_store` must be up):
 
 ```sh
@@ -105,7 +114,7 @@ Push extracts into Garage for CloudTAK **Hosted** tilesets (`tak_store` must be 
 ./maps/publish-garage.sh --as ks-mo-features features.pmtiles
 ```
 
-That writes `s3://cloudtak/public/<name>.pmtiles`. The `/pmtiles/` nginx path is separate; Hosted basemaps need the Garage copy.
+That writes `s3://cloudtak/public/<name>.pmtiles` and restarts `tak_tiles` so its ETag cache does not 412/500 on the new object (`--no-restart` to skip). The `/pmtiles/` nginx path is separate; Hosted basemaps need the Garage copy.
 
 Enrollment package, after the server is up. Use the same name setup put on the certificate:
 

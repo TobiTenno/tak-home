@@ -5,8 +5,14 @@ config/cloudtak.env
 tak-ca.pem
 swag/cloudtak.conf
 maps/basemap.json
+maps/basemap.hosted.json
+maps/basemap.json.styles-only.json
+maps/basemap.hosted.json.styles-only.json
+maps/basemap.hosted.styles.json
+maps/basemap.hosted.patch.json
 maps/provider
 maps/data/*.pmtiles
+maps/data/*.json
 maps/data/extract.json
 maps/data/sprites/
 datapackages/
