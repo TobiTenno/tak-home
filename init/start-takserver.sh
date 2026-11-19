@@ -76,9 +76,9 @@ if [[ "${FEDERATION:-false}" == true ]]; then
              cut -d= -f2)
   done
 
-  # Protocol version 2 only, on port 9001.
+  # Protocol version 2 only, on port 9473.
   federation="    <federation enableFederation=\"true\">
-        <federation-server v1enabled=\"false\" v2enabled=\"true\" v2port=\"9001\">
+        <federation-server v1enabled=\"false\" v2enabled=\"true\" v2port=\"9473\">
             <tls context=\"TLSv1.2\" keymanager=\"SunX509\"
                 keystore=\"JKS\" keystoreFile=\"$FILES/takserver.jks\" keystorePass=\"${TAKSERVER_CERT_PASS}\"
                 truststore=\"JKS\" truststoreFile=\"$FILES/fed-truststore.jks\" truststorePass=\"${CA_PASS}\"/>
@@ -89,7 +89,7 @@ $outgoing        <fileFilter>
 $cas    </federation>"
   awk -v block="$federation" '{ print } /^    <\/security>/ && !done { print block; done=1 }' CoreConfig.xml > CoreConfig.tmp
   mv CoreConfig.tmp CoreConfig.xml
-  echo "Federation on: port 9001, connecting to ${FEDERATE_WITH:-nobody (waiting for others)}, sharing ${FEDERATION_SHARE:-__ANON__}, receiving into ${FEDERATION_RECEIVE:-__ANON__}"
+  echo "Federation on: port 9473, connecting to ${FEDERATE_WITH:-nobody (waiting for others)}, sharing ${FEDERATION_SHARE:-__ANON__}, receiving into ${FEDERATION_RECEIVE:-__ANON__}"
 fi
 
 # The console's Revoke button runs upstream's revokeCert.sh, which needs the

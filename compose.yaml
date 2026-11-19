@@ -7,7 +7,7 @@ name: tak-home
 #
 # No host ports. SWAG joins network "tak" and proxies by service name:
 #   tak_api:5000, tak_tiles:5002, tak_pmtiles:80
-#   tak_server:8089, tak_server:8443, tak_server:8446, tak_server:9001
+#   tak_server:8089, tak_server:8443, tak_server:8446, tak_server:9473
 # tak_server also answers as "takserver" so the certificate can use that name.
 # Underscores are a poor fit for a TLS DNS name.
 # TAK TLS stays on tak_server. SWAG stream proxies those ports without decrypting.
@@ -68,7 +68,7 @@ services:
       - "8089"
       - "8443"
       - "8446"
-      - "9001"
+      - "9473"
     depends_on:
       tak_certs:
         condition: service_completed_successfully

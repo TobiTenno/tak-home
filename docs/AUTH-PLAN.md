@@ -70,6 +70,26 @@ SWAG already lists `auth` in subdomains on the home lab — reuse `auth.<domain>
 
 **Do not** put Authelia forward-auth in front of CloudTAK as the only “SSO”. CloudTAK needs its own OIDC session/JWT. Forward-auth is fine for some apps; wrong primary layer for CloudTAK.
 
+## Admin panels — optional network lock (decided intent)
+
+Public Authelia login (`auth.<domain>/`) stays reachable for SSO. **Admin UIs** (LLDAP web UI and/or `authelia-admin` at `/auth-admin/`) should be **optionally hidden** from the open internet.
+
+Allowlist modes (pick one or combine via SWAG/`allow`/`deny` or bind address):
+
+| Mode | Who can reach admin UI |
+| --- | --- |
+| **subnet** | LAN / RFC1918 (e.g. `192.168.0.0/16`, `10.0.0.0/8`) |
+| **localhost** | `127.0.0.1` / `::1` only (SSH tunnel or local browser) |
+| **Tailscale** | Tailscale CGNAT / interface (e.g. `100.64.0.0/10` or known tailnet IPs) |
+| **off / public** | Same exposure as login (not recommended for admin) |
+
+Implementation notes (auth stack, not `tak-home`):
+
+- Prefer **nginx/SWAG `allow`/`deny`** (or Authelia access control on the admin location) so login stays public while `/auth-admin/` and LLDAP’s UI port/path are locked.
+- Or bind admin ports to Tailscale/localhost only and do **not** publish them on the WAN-facing proxy.
+- Document the chosen mode in auth-stack env (e.g. `ADMIN_EXPOSE=subnet|localhost|tailscale|public`).
+- Still require Authelia login / admin groups on top of the network lock — network is defense in depth, not the only gate.
+
 ## Phases
 
 ### Phase 0 — Prerequisites (already mostly done)
@@ -97,8 +117,10 @@ SWAG already lists `auth` in subdomains on the home lab — reuse `auth.<domain>
 - [ ] Add Authelia to the **same** auth compose as LLDAP
 - [ ] Authelia config: LDAP backend `implementation: lldap`
 - [ ] Session / storage (Postgres or local — prefer Postgres if already on host)
-- [ ] SWAG vhost `auth.<domain>` → Authelia
-- [ ] Optional: `location /auth-admin/` → authelia-admin (protect with Authelia)
+- [ ] SWAG vhost `auth.<domain>` → Authelia (public login OK)
+- [ ] Optional: `location /auth-admin/` → authelia-admin (Authelia auth **and** optional network allowlist)
+- [ ] Optional: lock LLDAP web UI the same way (subnet / localhost / Tailscale) — not on public LE by default
+- [ ] Env/docs: `ADMIN_EXPOSE=subnet|localhost|tailscale|public`
 - [ ] Enable OIDC provider (HMAC/JWKS secrets)
 - [ ] Register client **`cloudtak`**:
   - Redirect: `https://map.<domain>/api/login/oidc/callback`
@@ -178,6 +200,7 @@ Same Authelia + LLDAP can issue OIDC to anything that speaks Authorization Code.
 
 - [ ] Compose: `lldap`, `authelia`, optional `authelia-admin`
 - [ ] Templates: Authelia `configuration.yml`, LLDAP env, SWAG `auth` site conf snippet
+- [ ] SWAG (or bind) rules for optional admin-panel lock: subnet / localhost / Tailscale / public
 - [ ] OIDC clients + secrets live here (CloudTAK client definition, plus any other apps)
 - [ ] Network: attach to shared `tak` (or SWAG) network; publish nothing host-side that SWAG doesn’t need
 
@@ -202,6 +225,7 @@ Same Authelia + LLDAP can issue OIDC to anything that speaks Authorization Code.
 | --- | --- | --- |
 | Where Authelia/LLDAP compose lives | Inside `tak-home` vs **separate auth stack** on shared network | **Separate auth stack** (decided) |
 | Auth stack location | New repo vs sibling folder next to SWAG compose | |
+| Admin panel exposure | subnet / localhost / Tailscale / public | **Optional lock** — prefer subnet or Tailscale; public discouraged |
 | Authelia storage | Local vs Postgres | |
 | TAK groups | LDAP bind vs OIDC `groupsClaim` only | |
 | First cutover date / enforce SSO | | |

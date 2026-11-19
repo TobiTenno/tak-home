@@ -29,7 +29,9 @@ Two certificate worlds. Keep them apart:
 | Name | Port | Certificate |
 | --- | --- | --- |
 | `map.example.com`, `tiles.example.com` | 443 | SWAG Let's Encrypt |
-| `tak.example.com` | 8089, 8443, 8446, 9001 | TAK private CA (stream passthrough) |
+| `tak.example.com` | 8089, 8443, 8446, **9473** (federation v2) | TAK private CA (stream passthrough) |
+
+Federation uses **9473** (not 9001) so host 9001 stays free (e.g. Mosquitto WebSockets).
 
 SWAG `SUBDOMAINS` / `EXTRA_DOMAINS` should list `map` and `tiles` only. Leave `tak` out of Let's Encrypt. Do not copy TAK `*.pem` / `*.p12` into SWAG `/config/keys`.
 
@@ -45,7 +47,7 @@ services:
       - "8089:8089"
       - "8443:8443"
       - "8446:8446"
-      - "9001:9001"
+      - "9473:9473"
 networks:
   tak:
     name: tak
@@ -58,7 +60,7 @@ A separate compose file uses the same network with `external: true`. Copy paths 
 | `swag/cloudtak.conf` | `/config/nginx/site-confs/` |
 | `swag/tak-stream.conf` | `/config/nginx/stream-confs/` |
 
-Do not put `tak-stream.conf` in `site-confs`. That directory is HTTP only; nginx will reject `proxy_pass` there. The stream file forwards 8089, 8443, 8446, and 9001 to `tak_server` without decrypting them.
+Do not put `tak-stream.conf` in `site-confs`. That directory is HTTP only; nginx will reject `proxy_pass` there. The stream file forwards 8089, 8443, 8446, and 9473 to `tak_server` without decrypting them.
 
 SWAG dropped the stock stream include. In `/config/nginx/nginx.conf`, add a top-level block (next to `http`, not inside it):
 

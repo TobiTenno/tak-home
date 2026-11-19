@@ -243,7 +243,7 @@ echo "SWAG stream  $root/swag/tak-stream.conf"
 echo
 echo "Point DNS for $map_host, $tiles_host, and $tak_host at SWAG."
 echo "Join the SWAG service to Docker network tak."
-echo "Publish 443, 8089, 8443, 8446, and 9001 on SWAG. This stack publishes none."
+echo "Publish 443, 8089, 8443, 8446, and 9473 on SWAG. This stack publishes none."
 echo "SWAG Let's Encrypt: $map_host and $tiles_host only. Leave $tak_host out of SUBDOMAINS."
 echo "ATAK uses the TAK private CA on 8089. Do not put TAK certs in SWAG /config/keys."
 if [[ -f "maps/providers/$provider/fetch.sh" ]]; then
