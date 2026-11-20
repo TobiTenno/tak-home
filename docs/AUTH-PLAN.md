@@ -1,8 +1,8 @@
 # Auth / SSO plan (Authelia + LLDAP)
 
-Status: **planned** — identity stack not built yet.  
-Operator walkthrough for the existing TAK stack: [`setup-guide.html`](./setup-guide.html).  
-This doc is the implementation plan for identity after the TAK/CloudTAK stack is up.
+Status: **scaffolded** — sibling repo [`auth-home`](../../auth-home) (`~/projects/auth-home`): compose, `setup.sh`, `scripts/migrate-users.sh` (`--migrate-plaintext-pass`), SWAG snippet + admin expose modes.  
+Operator walkthrough: [`setup-guide.html`](./setup-guide.html) (domain field + copyable commands).  
+This doc remains the integration plan for CloudTAK/TAK after auth-home is up.
 
 ## Stack boundary (decided)
 
@@ -11,7 +11,7 @@ This doc is the implementation plan for identity after the TAK/CloudTAK stack is
 | Stack | Owns | Does not own |
 | --- | --- | --- |
 | **`tak-home`** | TAK Server, CloudTAK, maps, SWAG snippets for `map`/`tiles`/`tak` stream, OIDC *client* config notes, CoreConfig oauth/ldap *integration* docs | Authelia, LLDAP, authelia-admin containers |
-| **Auth stack** (separate repo or sibling compose, e.g. `auth-home` / lab compose) | LLDAP, Authelia, optional authelia-admin, Authelia OIDC *provider* + clients, auth secrets | TAK/CloudTAK services |
+| **Auth stack** (`auth-home`) | `auth_lldap`, `auth_authelia`, optional `auth_authelia_admin`; OIDC provider; env files under `config/` | TAK/CloudTAK services |
 
 Reasons:
 
@@ -35,7 +35,8 @@ Reasons:
 - Replacing ATAK client-cert auth with Authelia cookies (won’t work that way).
 - Auto-promoting CloudTAK `system_admin` / `agency_admin` from LLDAP groups (CloudTAK stores those in its DB; no first-class OIDC→admin map today).
 - Putting Authelia/LLDAP (or other apps’ compose) inside `tak-home`.
-- Seamless password-hash migration into LLDAP (impossible — OPAQUE; reset once).
+- Importing **password hashes** into LLDAP (OPAQUE — hashes from other systems won’t load).
+  Plaintext passwords already held in deploy secrets **can** be seeded (see migration).
 
 ## Architecture
 
@@ -101,10 +102,10 @@ Implementation notes (auth stack, not `tak-home`):
 
 ### Phase 1 — LLDAP (auth stack)
 
-- [ ] Create / extend the **separate** auth compose (not `tak-home/compose.yaml`)
-- [ ] Add `lldap` on the shared proxy/`tak` network (reachable from Authelia + optionally `tak_server`)
-- [ ] Set `LLDAP_BASE_DN`, admin password, JWT secret
-- [ ] Create bind user for Authelia (read users/groups; password change if Authelia reset used)
+- [x] Separate auth compose: `auth-home/compose.yaml` (not `tak-home`)
+- [x] `lldap` on shared `tak` network (external)
+- [x] `./setup.sh` writes `LLDAP_*` into `config/auth.env`
+- [ ] Create bind user for Authelia (migrate script seeds `authelia`; verify after first up)
 - [ ] Create groups (examples):
   - `authelia_users` / `cloudtak_users` — who may SSO
   - `tak_*` — TAK channel groups (prefix match in CoreConfig)
@@ -114,13 +115,12 @@ Implementation notes (auth stack, not `tak-home`):
 
 ### Phase 2 — Authelia (auth stack)
 
-- [ ] Add Authelia to the **same** auth compose as LLDAP
-- [ ] Authelia config: LDAP backend `implementation: lldap`
-- [ ] Session / storage (Postgres or local — prefer Postgres if already on host)
-- [ ] SWAG vhost `auth.<domain>` → Authelia (public login OK)
-- [ ] Optional: `location /auth-admin/` → authelia-admin (Authelia auth **and** optional network allowlist)
-- [ ] Optional: lock LLDAP web UI the same way (subnet / localhost / Tailscale) — not on public LE by default
-- [ ] Env/docs: `ADMIN_EXPOSE=subnet|localhost|tailscale|public`
+- [x] Authelia in same auth compose as LLDAP
+- [x] Authelia config template: LDAP `implementation: lldap` + CloudTAK OIDC client
+- [x] Local SQLite storage under volume (Postgres later if desired)
+- [x] SWAG `swag/auth.conf` — public login; admin paths allowlisted
+- [x] `ADMIN_EXPOSE=subnet|localhost|tailscale|public` via `./setup.sh --admin-expose`
+- [ ] Deploy on server: compose up, copy SWAG conf, verify discovery URL
 - [ ] Enable OIDC provider (HMAC/JWKS secrets)
 - [ ] Register client **`cloudtak`**:
   - Redirect: `https://map.<domain>/api/login/oidc/callback`
@@ -166,13 +166,25 @@ In `CoreConfig.xml` `<auth>`:
 - [ ] Document IN/OUT naming for this deploy
 - [ ] CloudTAK `system_admin` still set in CloudTAK Admin (call out in runbook)
 
-### Phase 6 — Cut over
+### Phase 6 — Cut over (incl. password seed from secrets)
 
-- [ ] Export CloudTAK profile emails → create LLDAP users (script TBD)
-- [ ] Password reset / invite (hashes do not migrate)
+`tak-home` already stores **plaintext** enroll passwords in deploy `config/secrets.env` as `USER_PASS_<NAME>` (from `setup.sh` + `USERS=` in `takserver.env`). Auth setup **should detect those** and use them as the initial LLDAP passwords so users keep the same secret at first SSO — no hash import needed; LLDAP re-derives OPAQUE from the plaintext once.
+
+- [ ] Export identities: TAK `USERS` / CloudTAK `profiles` emails → LLDAP users (`mail` must match CloudTAK username for SSO)
+- [ ] **Detect** `USER_PASS_*` (and any optional auth-stack secret map) during auth bootstrap
+- [ ] For each matched user: create LLDAP account + `lldap_set_password` / bootstrap with that exact plaintext
+- [ ] Users without a detected secret → generate temp password or invite / reset flow
+- [ ] Document identity map when TAK name ≠ email (e.g. `alpha-1` → `alpha@example.com`) — SSO needs the email CloudTAK expects
 - [ ] All users SSO once with enforce still off
 - [ ] Set `oidc::enforced` true
 - [ ] Break-glass: `PUT /api/config` `{"oidc::enforced": false}` or delete settings row
+- [ ] Optional later: rotate / drop plaintext `USER_PASS_*` from long-term secrets once everyone uses Authelia (TAK file users may still need them if LDAP not default for ATAK enroll)
+
+Caveats:
+
+- Only works where plaintext still exists in secrets (or an operator-supplied seed file). Cannot recover from LLDAP/Authelia/TAK hashes alone.
+- First login after seed can use the old password via Authelia; changing it in LLDAP/Authelia does not auto-update TAK `UserManager` unless LDAP is the TAK auth backend too.
+- Prefer one-shot bootstrap script on the **auth stack**, reading a path to `tak-home`’s `secrets.env` (or a copied seed) — do not commit those values.
 
 ### Phase 7 — Other apps (out of repo; keep in mind)
 
@@ -191,7 +203,9 @@ Same Authelia + LLDAP can issue OIDC to anything that speaks Authorization Code.
 | Emails / usernames | Yes → LLDAP `uid` + `mail` (must match CloudTAK) |
 | Groups | Yes → recreate in LLDAP |
 | CloudTAK data / certs | Stay in CloudTAK DB |
-| Passwords | Reset once (LLDAP OPAQUE ≠ bcrypt import) |
+| Passwords (hashes) | No — cannot import into LLDAP OPAQUE |
+| Passwords (plaintext in `USER_PASS_*` / seed file) | **Yes** — detect at auth setup; set as initial LLDAP password |
+| Passwords (no secret on hand) | Temp / invite / reset |
 | ATAK client certs | Keep |
 
 ## Work TBD
@@ -207,9 +221,17 @@ Same Authelia + LLDAP can issue OIDC to anything that speaks Authorization Code.
 ### `tak-home` (this repo) — integration only
 
 - [ ] Docs/runbook: CoreConfig oauth (+ optional ldap) snippet; `init/` hook only if we automate TAK side
-- [ ] Script or notes: CloudTAK `profiles` emails → LLDAP bootstrap (runs against auth stack API)
+- [ ] Document `USER_PASS_*` layout for auth-stack bootstrap to detect
+- [ ] Optional helper export: users + emails (+ path to secrets) for auth seed — no Authelia in this compose
 - [ ] Keep SSO sections in `setup-guide.html` pointing at the external auth stack
 - [ ] No Authelia/LLDAP services in `tak-home/compose.yaml`
+
+### Auth stack — bootstrap
+
+- [x] `scripts/migrate-users.sh` — `--tak-home`, `--email-domain`, `--dry-run`, `--migrate-plaintext-pass`
+- [x] Without plaintext flag: random temps printed once; with flag: seed `USER_PASS_*`
+- [ ] Validate GraphQL mutations against live LLDAP; fix group-id edge cases if needed
+- [ ] Never commit `config/auth.env` / `config/secrets/` (gitignored) |
 
 ## References
 
