@@ -97,6 +97,13 @@
       font-size: 0.8rem;
     }
     nav .progress strong { color: var(--accent); font-weight: 600; }
+    nav .progress .persist-hint {
+      display: block;
+      margin-top: 0.4rem;
+      font-size: 0.72rem;
+      color: var(--muted);
+      opacity: 0.85;
+    }
 
     .domain-bar {
       display: grid;
@@ -331,7 +338,7 @@
         <li><a href="#migrate">7 · Migrate users</a></li>
         <li><a href="#checks">Checklist</a></li>
       </ol>
-      <div class="progress" id="progress">Checklist: <strong>0</strong> / 0</div>
+      <div class="progress" id="progress">Checklist: <strong>0</strong> / 0<span class="persist-hint">Saved in this browser</span></div>
     </nav>
 
     <main id="top">
@@ -601,10 +608,10 @@ networks:
 
       <section id="checks">
         <h2>Master checklist</h2>
-        <p>All steps above roll up here. Clear progress:</p>
+        <p>All steps above roll up here. Checks + domain/compose path stay in <code>localStorage</code> on this browser so you can stop mid-guide and return later.</p>
         <p>
           <button type="button" id="reset-checks" style="font:inherit;cursor:pointer;background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:var(--radius);padding:0.45rem 0.75rem;">
-            Reset all checkboxes
+            Reset checklist + saved fields
           </button>
         </p>
         <ul class="checklist" data-section="master" id="master-list"></ul>
@@ -659,25 +666,51 @@ networks:
       ],
     };
 
-    const STORAGE_KEY = "tak-home-setup-guide-v1";
-    const state = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+    const STORAGE_KEY = "tak-home-setup-guide-v2";
+    const STORAGE_KEY_LEGACY = "tak-home-setup-guide-v1";
+    const DOMAIN_PH = "example.com";
+    const COMPOSE_PH = "../docker-compose.yml";
+
+    function readStore() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed && typeof parsed === "object" && parsed.checks) return parsed;
+        }
+        const legacy = localStorage.getItem(STORAGE_KEY_LEGACY);
+        if (legacy) {
+          const checks = JSON.parse(legacy);
+          if (checks && typeof checks === "object") {
+            return { checks, domain: DOMAIN_PH, compose: COMPOSE_PH };
+          }
+        }
+      } catch (_) { /* private mode / blocked */ }
+      return { checks: {}, domain: DOMAIN_PH, compose: COMPOSE_PH };
+    }
+
+    const store = readStore();
+    if (!store.checks || typeof store.checks !== "object") store.checks = {};
     /** @type {Map<string, HTMLInputElement[]>} */
     const inputsByKey = new Map();
 
     function save() {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
+        localStorage.removeItem(STORAGE_KEY_LEGACY);
+      } catch (_) { /* quota / blocked */ }
       updateProgress();
     }
 
     function updateProgress() {
       const keys = [...inputsByKey.keys()];
-      const done = keys.filter((k) => state[k]).length;
+      const done = keys.filter((k) => store.checks[k]).length;
       const el = document.getElementById("progress");
-      el.innerHTML = `Checklist: <strong>${done}</strong> / ${keys.length}`;
+      el.innerHTML = `Checklist: <strong>${done}</strong> / ${keys.length}<span class="persist-hint">Saved in this browser</span>`;
     }
 
     function setChecked(key, checked) {
-      state[key] = checked;
+      store.checks[key] = checked;
       for (const input of inputsByKey.get(key) || []) {
         input.checked = checked;
         input.closest("li")?.classList.toggle("done", checked);
@@ -694,7 +727,7 @@ networks:
         input.type = "checkbox";
         input.id = id;
         input.dataset.key = key;
-        input.checked = !!state[key];
+        input.checked = !!store.checks[key];
         if (input.checked) li.classList.add("done");
         const label = document.createElement("label");
         label.htmlFor = id;
@@ -717,19 +750,25 @@ networks:
     }
 
     document.getElementById("reset-checks").addEventListener("click", () => {
-      if (!confirm("Clear all checklist progress?")) return;
-      localStorage.removeItem(STORAGE_KEY);
+      if (!confirm("Clear checklist progress and saved domain/compose fields?")) return;
+      try {
+        localStorage.removeItem(STORAGE_KEY);
+        localStorage.removeItem(STORAGE_KEY_LEGACY);
+      } catch (_) {}
       location.reload();
     });
 
-    const DOMAIN_PH = "example.com";
-    const COMPOSE_PH = "../docker-compose.yml";
     const domainInput = document.getElementById("domain");
     const composeInput = document.getElementById("compose");
+    if (store.domain) domainInput.value = store.domain;
+    if (store.compose) composeInput.value = store.compose;
 
     function applyPlaceholders() {
       const d = (domainInput.value || DOMAIN_PH).trim() || DOMAIN_PH;
       const c = (composeInput.value || COMPOSE_PH).trim() || COMPOSE_PH;
+      store.domain = d;
+      store.compose = c;
+      save();
       document.querySelectorAll("pre[data-domain]").forEach((pre) => {
         const code = pre.querySelector("code");
         if (!code) return;
