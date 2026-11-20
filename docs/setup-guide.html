@@ -4,6 +4,9 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>tak-home setup guide</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+  <link rel="icon" href="favicon.ico" sizes="any" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Schibsted+Grotesk:wght@600;700&display=swap" rel="stylesheet" />
@@ -65,8 +68,16 @@
       letter-spacing: -0.02em;
       color: var(--accent);
       margin-bottom: 1rem;
-      display: block;
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
       text-decoration: none;
+    }
+    nav .brand img {
+      width: 1.75rem;
+      height: 1.75rem;
+      border-radius: 0.35rem;
+      flex-shrink: 0;
     }
     nav ol {
       list-style: none;
@@ -326,7 +337,7 @@
 <body>
   <div class="wrap">
     <nav aria-label="Steps">
-      <a class="brand" href="#top">tak-home</a>
+      <a class="brand" href="#top"><img src="logo.png" width="28" height="28" alt="" />tak-home</a>
       <ol>
         <li><a href="#overview">Overview</a></li>
         <li><a href="#copy-setup">1 · Copy &amp; setup</a></li>
@@ -507,7 +518,7 @@ networks:
           Auth lives in a <strong>separate</strong> sibling project <code>auth-home</code>
           (not this compose). Authelia = login / 2FA / OIDC; LLDAP = users/groups;
           optional <code>authelia-admin</code> at <code>https://auth.example.com/auth-admin/</code>.
-          Plan: <a href="AUTH-PLAN.md">AUTH-PLAN.md</a>.
+          Plan: <a href="auth-plan.html">Auth plan</a>.
         </p>
 
         <h3>6a · auth-home setup</h3>
@@ -618,7 +629,7 @@ networks:
       </section>
 
       <footer>
-        <a href="./">tak-home docs</a> · <a href="AUTH-PLAN.md">AUTH-PLAN</a>.
+        <a href="./">tak-home docs</a> · <a href="auth-plan.html">Auth plan</a> · <a href="dev-move.html">Dev move</a>.
         Auth stack: sibling <code>auth-home</code>. Domain + compose path above fill the copyable commands.
       </footer>
     </main>

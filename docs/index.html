@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>tak-home</title>
   <meta name="description" content="Operator docs for the tak-home CloudTAK + TAK Server stack." />
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+  <link rel="icon" href="favicon.ico" sizes="any" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500&family=Schibsted+Grotesk:wght@700&display=swap" rel="stylesheet" />
@@ -33,6 +36,13 @@
     }
     main {
       width: min(28rem, 100%);
+    }
+    .logo {
+      display: block;
+      width: 5.5rem;
+      height: 5.5rem;
+      margin: 0 0 1.1rem;
+      border-radius: 1rem;
     }
     .brand {
       font-family: "Schibsted Grotesk", sans-serif;
@@ -74,12 +84,13 @@
 </head>
 <body>
   <main>
+    <img class="logo" src="logo.png" width="88" height="88" alt="tak-home" />
     <h1 class="brand">tak-home</h1>
     <p>Docker-first CloudTAK + TAK Server. Operator walkthrough, SSO plan, and move notes.</p>
     <a class="cta" href="setup-guide.html">Open setup guide</a>
     <nav>
-      <a href="AUTH-PLAN.md">Auth plan</a>
-      <a href="DEV-MOVE.md">Dev move</a>
+      <a href="auth-plan.html">Auth plan</a>
+      <a href="dev-move.html">Dev move</a>
       <a href="https://github.com/TobiTenno/tak-home">GitHub</a>
     </nav>
   </main>

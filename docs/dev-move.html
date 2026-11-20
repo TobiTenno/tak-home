@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Moving development · tak-home</title>
+  <meta name="description" content="Moving development — tak-home docs" />
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+  <link rel="icon" href="favicon.ico" sizes="any" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Schibsted+Grotesk:wght@600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="site.css" />
+</head>
+<body>
+  <div class="wrap">
+    <aside class="side">
+      <a class="brand" href="./"><img src="logo.png" width="28" height="28" alt="" />tak-home</a>
+      <ul class="nav-links">
+        <li><a href="./">Home</a></li>
+        <li><a href="setup-guide.html">Setup guide</a></li>
+        <li><a href="auth-plan.html">Auth plan</a></li>
+        <li><a href="dev-move.html" aria-current="page">Dev move</a></li>
+      </ul>
+      <span class="toc-label">On this page</span>
+<ul class="toc">
+<li class="toc-h2"><a href="#what-this-repo-is">What this repo is</a></li>
+<li class="toc-h2"><a href="#bring-with-you">Bring with you</a></li>
+<li class="toc-h3"><a href="#required">Required</a></li>
+<li class="toc-h3"><a href="#secrets-do-not-commit-copy-privately">Secrets (do not commit; copy privately)</a></li>
+<li class="toc-h3"><a href="#optional-large">Optional / large</a></li>
+<li class="toc-h2"><a href="#do-not-assume-on-the-new-machine">Do not assume on the new machine</a></li>
+<li class="toc-h2"><a href="#suggested-workflow-on-the-new-box">Suggested workflow on the new box</a></li>
+<li class="toc-h2"><a href="#current-known-good-as-of-plan-write-up">Current known-good (as of plan write-up)</a></li>
+<li class="toc-h2"><a href="#sync-checklist-before-you-leave-this-machine">Sync checklist before you leave this machine</a></li>
+</ul>
+    </aside>
+    <main>
+      <article>
+<h1 id="moving-development-to-another-machine">Moving development to another machine</h1>
+<p>Use this when copying <code>tak-home</code> (and related deploy context) to a different box for a while.</p>
+<h2 id="what-this-repo-is">What this repo is</h2>
+<table>
+<thead>
+<tr>
+<th>Path</th>
+<th>Role</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Authoring / git source (this tree)</td>
+<td><code>/var/home/tobiah/projects/tak-home</code> (or clone)</td>
+</tr>
+<tr>
+<td>Deploy copy (example)</td>
+<td>Often <code>…/pvr/tak-home</code> next to shared compose via <code>./setup.sh -f …</code></td>
+</tr>
+<tr>
+<td>Older src mention</td>
+<td><code>~/tak-home</code> may exist — prefer one canonical clone</td>
+</tr>
+</tbody></table>
+<p>Generated / secret / bulky paths are <strong>not</strong> what you develop against blindly — see below.</p>
+<h2 id="bring-with-you">Bring with you</h2>
+<h3 id="required">Required</h3>
+<ul>
+<li><input disabled="" type="checkbox"> Git remote + branch (or <code>rsync</code>/<code>scp</code> of the project tree)</li>
+<li><input disabled="" type="checkbox"> This docs set: <code>docs/setup-guide.html</code>, <code>docs/AUTH-PLAN.md</code>, <code>docs/DEV-MOVE.md</code></li>
+<li><input disabled="" type="checkbox"> <code>README.md</code>, <code>compose.yaml</code>, <code>setup.sh</code>, <code>init/</code>, <code>swag/</code>, <code>maps/providers/</code>, scripts</li>
+</ul>
+<h3 id="secrets-do-not-commit-copy-privately">Secrets (do not commit; copy privately)</h3>
+<ul>
+<li><input disabled="" type="checkbox"> Deploy <code>config/cloudtak.env</code> (SigningSecret, Garage keys, CSP, <code>API_URL</code> / <code>PMTILES_URL</code>)</li>
+<li><input disabled="" type="checkbox"> Deploy <code>config/secrets.env</code> / <code>takserver.env</code></li>
+<li><input disabled="" type="checkbox"> Authelia / LLDAP secrets once created (OIDC client secrets, JWT, admin passwords)</li>
+<li><input disabled="" type="checkbox"> Cloudflare / SWAG DNS tokens if you edit LE from the new machine</li>
+</ul>
+<h3 id="optional-large">Optional / large</h3>
+<ul>
+<li><input disabled="" type="checkbox"> <code>maps/data/*.pmtiles</code> and <code>maps/data/sprites/</code> (gitignored; re-fetch with <code>./maps/fetch.sh</code> if easier)</li>
+<li><input disabled="" type="checkbox"> Generated <code>maps/basemap.hosted*.json</code> (rebuild with <code>./maps/render-basemap.sh</code>)</li>
+<li><input disabled="" type="checkbox"> <code>tak-ca.pem</code> / datapackages if you test ATAK against the same CA</li>
+</ul>
+<h2 id="do-not-assume-on-the-new-machine">Do not assume on the new machine</h2>
+<ul>
+<li>Docker containers from the server are <strong>not</strong> running here unless you start them (lab policy: often diagnose only; deploy via setup/<code>-f</code> on the server).</li>
+<li><code>setup.sh</code> only rewrites <code>API_URL</code> / <code>PMTILES_URL</code> on existing <code>cloudtak.env</code> — it does <strong>not</strong> merge new CSP template lines automatically.</li>
+<li>Hosted basemap tile URL must use <code>{$z}</code> not <code>{z}</code>.</li>
+<li>After Garage republish, restart <code>tak_tiles</code> (publish script does this unless <code>--no-restart</code>).</li>
+</ul>
+<h2 id="suggested-workflow-on-the-new-box">Suggested workflow on the new box</h2>
+<ol>
+<li>Clone / sync repo.</li>
+<li>Read <code>docs/AUTH-PLAN.md</code> for SSO backlog; <code>docs/setup-guide.html</code> for stack ops.</li>
+<li>Edit templates/scripts locally; copy changed files to deploy host (or push + pull).</li>
+<li>Run <code>./setup.sh &lt;domain&gt; -f &lt;shared-compose&gt;</code> on the <strong>server</strong> when regenerating confs.</li>
+<li>Keep other Authelia OIDC clients / app compose in a personal notes folder or sibling stack — outside <code>tak-home</code> so it doesn’t block TAK work.</li>
+</ol>
+<h2 id="current-known-good-as-of-plan-write-up">Current known-good (as of plan write-up)</h2>
+<ul>
+<li>Map site + T.Rex Hosted basemap recovered; Google basemaps OK after wiping stale <strong>profile overlays</strong> (DELETE is <code>DELETE /api/profile/overlay?id=</code>).</li>
+<li>CSP in live header includes T.Rex + Google hosts; template in <code>config/cloudtak.env.template</code> lists explicit hosts (no <code>*.google.com</code> wildcards).</li>
+<li>Auth stack (LLDAP/Authelia) is <strong>separate from <code>tak-home</code></strong> and not implemented yet — follow <code>AUTH-PLAN.md</code> (Stack boundary).</li>
+</ul>
+<h2 id="sync-checklist-before-you-leave-this-machine">Sync checklist before you leave this machine</h2>
+<ul>
+<li><input disabled="" type="checkbox"> Commit or stash plan docs + setup guide (when you want them in git)</li>
+<li><input disabled="" type="checkbox"> List uncommitted local-only secrets paths you still need</li>
+<li><input disabled="" type="checkbox"> Note live domains: <code>map.</code> / <code>tiles.</code> / <code>tak.</code> / <code>auth.</code> (+ any other OIDC apps)</li>
+<li><input disabled="" type="checkbox"> Note deploy compose path and SWAG config paths on the server</li>
+<li><input disabled="" type="checkbox"> Paste break-glass for OIDC lockout into password manager:<ul>
+<li><code>PUT /api/config</code> <code>{&quot;oidc::enforced&quot;: false}</code></li>
+<li>or <code>DELETE FROM settings WHERE key = &#39;oidc::enforced&#39;;</code></li>
+</ul>
+</li>
+</ul>
+
+      </article>
+      <footer class="doc-foot">
+        Source: <a href="DEV-MOVE.md">DEV-MOVE.md</a>
+        · <a href="./">docs home</a>
+        · <a href="https://github.com/TobiTenno/tak-home">GitHub</a>
+      </footer>
+    </main>
+  </div>
+</body>
+</html>

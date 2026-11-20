@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Auth / SSO plan · tak-home</title>
+  <meta name="description" content="Auth / SSO plan — tak-home docs" />
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+  <link rel="icon" href="favicon.ico" sizes="any" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Schibsted+Grotesk:wght@600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="site.css" />
+</head>
+<body>
+  <div class="wrap">
+    <aside class="side">
+      <a class="brand" href="./"><img src="logo.png" width="28" height="28" alt="" />tak-home</a>
+      <ul class="nav-links">
+        <li><a href="./">Home</a></li>
+        <li><a href="setup-guide.html">Setup guide</a></li>
+        <li><a href="auth-plan.html" aria-current="page">Auth plan</a></li>
+        <li><a href="dev-move.html">Dev move</a></li>
+      </ul>
+      <span class="toc-label">On this page</span>
+<ul class="toc">
+<li class="toc-h2"><a href="#stack-boundary-decided">Stack boundary (decided)</a></li>
+<li class="toc-h2"><a href="#goals">Goals</a></li>
+<li class="toc-h2"><a href="#non-goals-for-now">Non-goals (for now)</a></li>
+<li class="toc-h2"><a href="#architecture">Architecture</a></li>
+<li class="toc-h2"><a href="#admin-panels-optional-network-lock-decided-intent">Admin panels — optional network lock (decided intent)</a></li>
+<li class="toc-h2"><a href="#phases">Phases</a></li>
+<li class="toc-h3"><a href="#phase-0-prerequisites-already-mostly-done">Phase 0 — Prerequisites (already mostly done)</a></li>
+<li class="toc-h3"><a href="#phase-1-lldap-auth-stack">Phase 1 — LLDAP (auth stack)</a></li>
+<li class="toc-h3"><a href="#phase-2-authelia-auth-stack">Phase 2 — Authelia (auth stack)</a></li>
+<li class="toc-h3"><a href="#phase-3-cloudtak-oidc">Phase 3 — CloudTAK OIDC</a></li>
+<li class="toc-h3"><a href="#phase-4-tak-server-oauth-cert-enroll">Phase 4 — TAK Server OAuth (cert enroll)</a></li>
+<li class="toc-h3"><a href="#phase-5-tak-groups-from-lldap-optional">Phase 5 — TAK groups from LLDAP (optional)</a></li>
+<li class="toc-h3"><a href="#phase-6-cut-over-incl-password-seed-from-secrets">Phase 6 — Cut over (incl. password seed from secrets)</a></li>
+<li class="toc-h3"><a href="#phase-7-other-apps-out-of-repo-keep-in-mind">Phase 7 — Other apps (out of repo; keep in mind)</a></li>
+<li class="toc-h2"><a href="#migration-cheat-sheet">Migration cheat sheet</a></li>
+<li class="toc-h2"><a href="#work-tbd">Work TBD</a></li>
+<li class="toc-h3"><a href="#auth-stack-separate-project-compose">Auth stack (separate project / compose)</a></li>
+<li class="toc-h3"><a href="#tak-home-this-repo-integration-only">`tak-home` (this repo) — integration only</a></li>
+<li class="toc-h3"><a href="#auth-stack-bootstrap">Auth stack — bootstrap</a></li>
+<li class="toc-h2"><a href="#references">References</a></li>
+<li class="toc-h2"><a href="#open-decisions-fill-when-implementing">Open decisions (fill when implementing)</a></li>
+</ul>
+    </aside>
+    <main>
+      <article>
+<h1 id="auth-sso-plan-authelia-lldap">Auth / SSO plan (Authelia + LLDAP)</h1>
+<p>Status: <strong>scaffolded</strong> — sibling repo <a href="../../auth-home"><code>auth-home</code></a> (<code>~/projects/auth-home</code>): compose, <code>setup.sh</code>, <code>scripts/migrate-users.sh</code> (<code>--migrate-plaintext-pass</code>), SWAG snippet + admin expose modes.<br>Operator walkthrough: <a href="./setup-guide.html"><code>setup-guide.html</code></a> (domain field + copyable commands).<br>This doc remains the integration plan for CloudTAK/TAK after auth-home is up.</p>
+<h2 id="stack-boundary-decided">Stack boundary (decided)</h2>
+<p><strong>Auth is its own stack — technically separate from <code>tak-home</code>.</strong></p>
+<table>
+<thead>
+<tr>
+<th>Stack</th>
+<th>Owns</th>
+<th>Does not own</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong><code>tak-home</code></strong></td>
+<td>TAK Server, CloudTAK, maps, SWAG snippets for <code>map</code>/<code>tiles</code>/<code>tak</code> stream, OIDC <em>client</em> config notes, CoreConfig oauth/ldap <em>integration</em> docs</td>
+<td>Authelia, LLDAP, authelia-admin containers</td>
+</tr>
+<tr>
+<td><strong>Auth stack</strong> (<code>auth-home</code>)</td>
+<td><code>auth_lldap</code>, <code>auth_authelia</code>, optional <code>auth_authelia_admin</code>; OIDC provider; env files under <code>config/</code></td>
+<td>TAK/CloudTAK services</td>
+</tr>
+</tbody></table>
+<p>Reasons:</p>
+<ul>
+<li>Auth serves CloudTAK <strong>and</strong> other apps; lifecycle should not follow <code>--profile tak</code> up/down.</li>
+<li>Secrets and bespoke clients stay out of the TAK repo.</li>
+<li>Join the shared Docker network (<code>tak</code> or whatever SWAG uses) so <code>tak_api</code> / <code>tak_server</code> can reach Authelia discovery (and LLDAP if Phase 5 uses LDAP).</li>
+<li>SWAG proxies <code>auth.&lt;domain&gt;</code> to the auth stack; <code>tak-home</code> only documents the CloudTAK/TAK side of the wire-up.</li>
+</ul>
+<p><code>tak-home</code> keeps this plan + setup-guide SSO sections as <strong>integration</strong> docs, not the auth compose.</p>
+<h2 id="goals">Goals</h2>
+<ol>
+<li>Stop managing CloudTAK (and other app) passwords by hand.</li>
+<li>One directory (LLDAP) for users/groups; Authelia for login, 2FA, OIDC.</li>
+<li>Wire CloudTAK + TAK Server so SSO login and cert enroll work.</li>
+<li>Optionally map LLDAP groups → TAK Server channel groups / admin.</li>
+<li>Other apps = extra Authelia OIDC clients on the <strong>auth</strong> stack — never folded into <code>tak-home</code> compose.</li>
+</ol>
+<h2 id="non-goals-for-now">Non-goals (for now)</h2>
+<ul>
+<li>Replacing ATAK client-cert auth with Authelia cookies (won’t work that way).</li>
+<li>Auto-promoting CloudTAK <code>system_admin</code> / <code>agency_admin</code> from LLDAP groups (CloudTAK stores those in its DB; no first-class OIDC→admin map today).</li>
+<li>Putting Authelia/LLDAP (or other apps’ compose) inside <code>tak-home</code>.</li>
+<li>Importing <strong>password hashes</strong> into LLDAP (OPAQUE — hashes from other systems won’t load).
+Plaintext passwords already held in deploy secrets <strong>can</strong> be seeded (see migration).</li>
+</ul>
+<h2 id="architecture">Architecture</h2>
+<pre><code>                  ┌─────────────┐
+                  │  LLDAP UI / │
+                  │ authelia-admin│
+                  └──────┬──────┘
+                         │ users/groups
+                         ▼
+┌──────────┐      ┌─────────────┐      OIDC       ┌──────────┐
+│ Browser  │─────▶│  Authelia   │───────────────▶│ CloudTAK │
+└──────────┘      │ auth.&lt;dom&gt;  │                │ map.&lt;dom&gt;│
+                  └──────┬──────┘                └────┬─────┘
+                         │ LDAP bind                  │ enroll w/ IdP token
+                         ▼                            ▼
+                  ┌─────────────┐                ┌──────────┐
+                  │    LLDAP    │◀── optional ───│tak_server│
+                  └─────────────┘   LDAP groups  └──────────┘
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>Piece</th>
+<th>Job</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>LLDAP</strong></td>
+<td>Source of truth for users, emails, groups</td>
+</tr>
+<tr>
+<td><strong>Authelia</strong></td>
+<td>1FA/2FA, OIDC provider, app access policies</td>
+</tr>
+<tr>
+<td><strong>authelia-admin</strong> (optional)</td>
+<td>Same host path <code>/auth-admin/</code> — users + TOTP/bans</td>
+</tr>
+<tr>
+<td><strong>CloudTAK OIDC</strong></td>
+<td>SSO button; username = IdP <code>email</code> claim</td>
+</tr>
+<tr>
+<td><strong>TAK CoreConfig oauth</strong></td>
+<td>New-user / renew cert enroll via IdP token</td>
+</tr>
+<tr>
+<td><strong>TAK LDAP</strong> (optional phase)</td>
+<td>Channel groups + <code>adminGroup</code> from LLDAP</td>
+</tr>
+</tbody></table>
+<p>SWAG already lists <code>auth</code> in subdomains on the home lab — reuse <code>auth.&lt;domain&gt;</code> for Authelia.</p>
+<p><strong>Do not</strong> put Authelia forward-auth in front of CloudTAK as the only “SSO”. CloudTAK needs its own OIDC session/JWT. Forward-auth is fine for some apps; wrong primary layer for CloudTAK.</p>
+<h2 id="admin-panels-optional-network-lock-decided-intent">Admin panels — optional network lock (decided intent)</h2>
+<p>Public Authelia login (<code>auth.&lt;domain&gt;/</code>) stays reachable for SSO. <strong>Admin UIs</strong> (LLDAP web UI and/or <code>authelia-admin</code> at <code>/auth-admin/</code>) should be <strong>optionally hidden</strong> from the open internet.</p>
+<p>Allowlist modes (pick one or combine via SWAG/<code>allow</code>/<code>deny</code> or bind address):</p>
+<table>
+<thead>
+<tr>
+<th>Mode</th>
+<th>Who can reach admin UI</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>subnet</strong></td>
+<td>LAN / RFC1918 (e.g. <code>192.168.0.0/16</code>, <code>10.0.0.0/8</code>)</td>
+</tr>
+<tr>
+<td><strong>localhost</strong></td>
+<td><code>127.0.0.1</code> / <code>::1</code> only (SSH tunnel or local browser)</td>
+</tr>
+<tr>
+<td><strong>Tailscale</strong></td>
+<td>Tailscale CGNAT / interface (e.g. <code>100.64.0.0/10</code> or known tailnet IPs)</td>
+</tr>
+<tr>
+<td><strong>off / public</strong></td>
+<td>Same exposure as login (not recommended for admin)</td>
+</tr>
+</tbody></table>
+<p>Implementation notes (auth stack, not <code>tak-home</code>):</p>
+<ul>
+<li>Prefer <strong>nginx/SWAG <code>allow</code>/<code>deny</code></strong> (or Authelia access control on the admin location) so login stays public while <code>/auth-admin/</code> and LLDAP’s UI port/path are locked.</li>
+<li>Or bind admin ports to Tailscale/localhost only and do <strong>not</strong> publish them on the WAN-facing proxy.</li>
+<li>Document the chosen mode in auth-stack env (e.g. <code>ADMIN_EXPOSE=subnet|localhost|tailscale|public</code>).</li>
+<li>Still require Authelia login / admin groups on top of the network lock — network is defense in depth, not the only gate.</li>
+</ul>
+<h2 id="phases">Phases</h2>
+<h3 id="phase-0-prerequisites-already-mostly-done">Phase 0 — Prerequisites (already mostly done)</h3>
+<ul>
+<li><input checked="" disabled="" type="checkbox"> TAK + CloudTAK up behind SWAG (<code>map</code>, <code>tiles</code>, stream <code>tak</code>)</li>
+<li><input checked="" disabled="" type="checkbox"> Operator guide: <code>docs/setup-guide.html</code></li>
+<li><input disabled="" type="checkbox"> Note live domain and where Authelia will live</li>
+<li><input disabled="" type="checkbox"> Confirm whether <code>auth.&lt;domain&gt;</code> already points at something</li>
+</ul>
+<h3 id="phase-1-lldap-auth-stack">Phase 1 — LLDAP (auth stack)</h3>
+<ul>
+<li><input checked="" disabled="" type="checkbox"> Separate auth compose: <code>auth-home/compose.yaml</code> (not <code>tak-home</code>)</li>
+<li><input checked="" disabled="" type="checkbox"> <code>lldap</code> on shared <code>tak</code> network (external)</li>
+<li><input checked="" disabled="" type="checkbox"> <code>./setup.sh</code> writes <code>LLDAP_*</code> into <code>config/auth.env</code></li>
+<li><input disabled="" type="checkbox"> Create bind user for Authelia (migrate script seeds <code>authelia</code>; verify after first up)</li>
+<li><input disabled="" type="checkbox"> Create groups (examples):<ul>
+<li><code>authelia_users</code> / <code>cloudtak_users</code> — who may SSO</li>
+<li><code>tak_*</code> — TAK channel groups (prefix match in CoreConfig)</li>
+<li><code>tak_admins</code> — candidate for TAK <code>adminGroup</code></li>
+<li><code>lldap_admin</code>, <code>authelia_user_manager</code> — admin UIs</li>
+</ul>
+</li>
+<li><input disabled="" type="checkbox"> Bootstrap first real users with <strong>email = CloudTAK username</strong></li>
+</ul>
+<h3 id="phase-2-authelia-auth-stack">Phase 2 — Authelia (auth stack)</h3>
+<ul>
+<li><input checked="" disabled="" type="checkbox"> Authelia in same auth compose as LLDAP</li>
+<li><input checked="" disabled="" type="checkbox"> Authelia config template: LDAP <code>implementation: lldap</code> + CloudTAK OIDC client</li>
+<li><input checked="" disabled="" type="checkbox"> Local SQLite storage under volume (Postgres later if desired)</li>
+<li><input checked="" disabled="" type="checkbox"> SWAG <code>swag/auth.conf</code> — public login; admin paths allowlisted</li>
+<li><input checked="" disabled="" type="checkbox"> <code>ADMIN_EXPOSE=subnet|localhost|tailscale|public</code> via <code>./setup.sh --admin-expose</code></li>
+<li><input disabled="" type="checkbox"> Deploy on server: compose up, copy SWAG conf, verify discovery URL</li>
+<li><input disabled="" type="checkbox"> Enable OIDC provider (HMAC/JWKS secrets)</li>
+<li><input disabled="" type="checkbox"> Register client <strong><code>cloudtak</code></strong>:<ul>
+<li>Redirect: <code>https://map.&lt;domain&gt;/api/login/oidc/callback</code></li>
+<li>Scopes: <code>openid</code>, <code>profile</code>, <code>email</code></li>
+<li>Confidential; secret hashed in Authelia, plaintext in CloudTAK</li>
+</ul>
+</li>
+<li><input disabled="" type="checkbox"> Authorization policy: only <code>group:cloudtak_users</code> (or similar) may consent/login to that client</li>
+</ul>
+<h3 id="phase-3-cloudtak-oidc">Phase 3 — CloudTAK OIDC</h3>
+<ul>
+<li><input disabled="" type="checkbox"> Admin → Login → Enable OIDC (Enforce <strong>off</strong>)</li>
+<li><input disabled="" type="checkbox"> Discovery: <code>https://auth.&lt;domain&gt;/.well-known/openid-configuration</code></li>
+<li><input disabled="" type="checkbox"> Client id/secret match Authelia</li>
+<li><input disabled="" type="checkbox"> Test SSO as existing user (same email) → existing profile/cert</li>
+<li><input disabled="" type="checkbox"> Test brand-new user → expect enroll path (needs Phase 4)</li>
+</ul>
+<p>Docs: <a href="https://docs.cloudtak.io/admin/#single-sign-on-oidc">https://docs.cloudtak.io/admin/#single-sign-on-oidc</a></p>
+<h3 id="phase-4-tak-server-oauth-cert-enroll">Phase 4 — TAK Server OAuth (cert enroll)</h3>
+<p>In <code>CoreConfig.xml</code> <code>&lt;auth&gt;</code>:</p>
+<pre><code class="language-xml">&lt;oauth usernameClaim=&quot;email&quot;&gt;
+  &lt;openIdDiscoveryConfiguration
+    name=&quot;cloudtak-sso&quot;
+    clientId=&quot;cloudtak&quot;
+    secret=&quot;SAME_PLAINTEXT_AS_CLOUDTAK&quot;
+    redirectUri=&quot;https://map.DOMAIN/api/login/oidc/callback&quot;
+    configurationUri=&quot;https://auth.DOMAIN/.well-known/openid-configuration&quot;/&gt;
+&lt;/oauth&gt;
+</code></pre>
+<ul>
+<li><input disabled="" type="checkbox"> Patch via <code>init/start-takserver.sh</code> or documented manual edit</li>
+<li><input disabled="" type="checkbox"> Restart <code>tak_server</code></li>
+<li><input disabled="" type="checkbox"> TAK must reach Authelia discovery; document must include <code>scopes_supported</code></li>
+<li><input disabled="" type="checkbox"> New SSO user gets a cert; check <code>takserver-api.log</code> if 500 on enroll</li>
+</ul>
+<h3 id="phase-5-tak-groups-from-lldap-optional">Phase 5 — TAK groups from LLDAP (optional)</h3>
+<ul>
+<li><input disabled="" type="checkbox"> Point TAK <code>&lt;ldap&gt;</code> at LLDAP <strong>or</strong> ensure OIDC tokens carry <code>groups</code> + <code>groupsClaim</code></li>
+<li><input disabled="" type="checkbox"> <code>groupprefix</code> e.g. <code>tak_</code> so only intentional groups become channels</li>
+<li><input disabled="" type="checkbox"> <code>adminGroup</code> → LLDAP group that grants TAK <code>ROLE_ADMIN</code></li>
+<li><input disabled="" type="checkbox"> Document IN/OUT naming for this deploy</li>
+<li><input disabled="" type="checkbox"> CloudTAK <code>system_admin</code> still set in CloudTAK Admin (call out in runbook)</li>
+</ul>
+<h3 id="phase-6-cut-over-incl-password-seed-from-secrets">Phase 6 — Cut over (incl. password seed from secrets)</h3>
+<p><code>tak-home</code> already stores <strong>plaintext</strong> enroll passwords in deploy <code>config/secrets.env</code> as <code>USER_PASS_&lt;NAME&gt;</code> (from <code>setup.sh</code> + <code>USERS=</code> in <code>takserver.env</code>). Auth setup <strong>should detect those</strong> and use them as the initial LLDAP passwords so users keep the same secret at first SSO — no hash import needed; LLDAP re-derives OPAQUE from the plaintext once.</p>
+<ul>
+<li><input disabled="" type="checkbox"> Export identities: TAK <code>USERS</code> / CloudTAK <code>profiles</code> emails → LLDAP users (<code>mail</code> must match CloudTAK username for SSO)</li>
+<li><input disabled="" type="checkbox"> <strong>Detect</strong> <code>USER_PASS_*</code> (and any optional auth-stack secret map) during auth bootstrap</li>
+<li><input disabled="" type="checkbox"> For each matched user: create LLDAP account + <code>lldap_set_password</code> / bootstrap with that exact plaintext</li>
+<li><input disabled="" type="checkbox"> Users without a detected secret → generate temp password or invite / reset flow</li>
+<li><input disabled="" type="checkbox"> Document identity map when TAK name ≠ email (e.g. <code>alpha-1</code> → <code>alpha@example.com</code>) — SSO needs the email CloudTAK expects</li>
+<li><input disabled="" type="checkbox"> All users SSO once with enforce still off</li>
+<li><input disabled="" type="checkbox"> Set <code>oidc::enforced</code> true</li>
+<li><input disabled="" type="checkbox"> Break-glass: <code>PUT /api/config</code> <code>{&quot;oidc::enforced&quot;: false}</code> or delete settings row</li>
+<li><input disabled="" type="checkbox"> Optional later: rotate / drop plaintext <code>USER_PASS_*</code> from long-term secrets once everyone uses Authelia (TAK file users may still need them if LDAP not default for ATAK enroll)</li>
+</ul>
+<p>Caveats:</p>
+<ul>
+<li>Only works where plaintext still exists in secrets (or an operator-supplied seed file). Cannot recover from LLDAP/Authelia/TAK hashes alone.</li>
+<li>First login after seed can use the old password via Authelia; changing it in LLDAP/Authelia does not auto-update TAK <code>UserManager</code> unless LDAP is the TAK auth backend too.</li>
+<li>Prefer one-shot bootstrap script on the <strong>auth stack</strong>, reading a path to <code>tak-home</code>’s <code>secrets.env</code> (or a copied seed) — do not commit those values.</li>
+</ul>
+<h3 id="phase-7-other-apps-out-of-repo-keep-in-mind">Phase 7 — Other apps (out of repo; keep in mind)</h3>
+<p>Same Authelia + LLDAP can issue OIDC to anything that speaks Authorization Code. Pattern:</p>
+<ul>
+<li>Register a new confidential client (own <code>client_id</code>, redirect URI(s), scopes).</li>
+<li>Prefer native OIDC in the app over Authelia forward-auth alone when the app has its own session.</li>
+<li>Gate who may use the client with an Authelia authorization policy / LLDAP group.</li>
+<li>Match each app’s quirks (callback path, <code>offline_access</code>, token auth method) from that app’s docs — not from this repo.</li>
+<li>Keep those compose/env files outside <code>tak-home</code>.</li>
+</ul>
+<h2 id="migration-cheat-sheet">Migration cheat sheet</h2>
+<table>
+<thead>
+<tr>
+<th>Migrate</th>
+<th>How</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Emails / usernames</td>
+<td>Yes → LLDAP <code>uid</code> + <code>mail</code> (must match CloudTAK)</td>
+</tr>
+<tr>
+<td>Groups</td>
+<td>Yes → recreate in LLDAP</td>
+</tr>
+<tr>
+<td>CloudTAK data / certs</td>
+<td>Stay in CloudTAK DB</td>
+</tr>
+<tr>
+<td>Passwords (hashes)</td>
+<td>No — cannot import into LLDAP OPAQUE</td>
+</tr>
+<tr>
+<td>Passwords (plaintext in <code>USER_PASS_*</code> / seed file)</td>
+<td><strong>Yes</strong> — detect at auth setup; set as initial LLDAP password</td>
+</tr>
+<tr>
+<td>Passwords (no secret on hand)</td>
+<td>Temp / invite / reset</td>
+</tr>
+<tr>
+<td>ATAK client certs</td>
+<td>Keep</td>
+</tr>
+</tbody></table>
+<h2 id="work-tbd">Work TBD</h2>
+<h3 id="auth-stack-separate-project-compose">Auth stack (separate project / compose)</h3>
+<ul>
+<li><input disabled="" type="checkbox"> Compose: <code>lldap</code>, <code>authelia</code>, optional <code>authelia-admin</code></li>
+<li><input disabled="" type="checkbox"> Templates: Authelia <code>configuration.yml</code>, LLDAP env, SWAG <code>auth</code> site conf snippet</li>
+<li><input disabled="" type="checkbox"> SWAG (or bind) rules for optional admin-panel lock: subnet / localhost / Tailscale / public</li>
+<li><input disabled="" type="checkbox"> OIDC clients + secrets live here (CloudTAK client definition, plus any other apps)</li>
+<li><input disabled="" type="checkbox"> Network: attach to shared <code>tak</code> (or SWAG) network; publish nothing host-side that SWAG doesn’t need</li>
+</ul>
+<h3 id="tak-home-this-repo-integration-only">`tak-home` (this repo) — integration only</h3>
+<ul>
+<li><input disabled="" type="checkbox"> Docs/runbook: CoreConfig oauth (+ optional ldap) snippet; <code>init/</code> hook only if we automate TAK side</li>
+<li><input disabled="" type="checkbox"> Document <code>USER_PASS_*</code> layout for auth-stack bootstrap to detect</li>
+<li><input disabled="" type="checkbox"> Optional helper export: users + emails (+ path to secrets) for auth seed — no Authelia in this compose</li>
+<li><input disabled="" type="checkbox"> Keep SSO sections in <code>setup-guide.html</code> pointing at the external auth stack</li>
+<li><input disabled="" type="checkbox"> No Authelia/LLDAP services in <code>tak-home/compose.yaml</code></li>
+</ul>
+<h3 id="auth-stack-bootstrap">Auth stack — bootstrap</h3>
+<ul>
+<li><input checked="" disabled="" type="checkbox"> <code>scripts/migrate-users.sh</code> — <code>--tak-home</code>, <code>--email-domain</code>, <code>--dry-run</code>, <code>--migrate-plaintext-pass</code></li>
+<li><input checked="" disabled="" type="checkbox"> Without plaintext flag: random temps printed once; with flag: seed <code>USER_PASS_*</code></li>
+<li><input disabled="" type="checkbox"> Validate GraphQL mutations against live LLDAP; fix group-id edge cases if needed</li>
+<li><input disabled="" type="checkbox"> Never commit <code>config/auth.env</code> / <code>config/secrets/</code> (gitignored) |</li>
+</ul>
+<h2 id="references">References</h2>
+<ul>
+<li>CloudTAK OIDC: <a href="https://docs.cloudtak.io/admin/#single-sign-on-oidc">https://docs.cloudtak.io/admin/#single-sign-on-oidc</a></li>
+<li>Authelia ↔ LLDAP: <a href="https://www.authelia.com/integration/ldap/lldap/">https://www.authelia.com/integration/ldap/lldap/</a></li>
+<li>Authelia OIDC clients: <a href="https://www.authelia.com/integration/openid-connect/clients/">https://www.authelia.com/integration/openid-connect/clients/</a></li>
+<li>authelia-admin: <a href="https://github.com/asalimonov/authelia-admin">https://github.com/asalimonov/authelia-admin</a></li>
+<li>TAK LDAP groups (community): groupprefix / groupBaseRDN / adminGroup patterns</li>
+</ul>
+<h2 id="open-decisions-fill-when-implementing">Open decisions (fill when implementing)</h2>
+<table>
+<thead>
+<tr>
+<th>Decision</th>
+<th>Options</th>
+<th>Pick</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Where Authelia/LLDAP compose lives</td>
+<td>Inside <code>tak-home</code> vs <strong>separate auth stack</strong> on shared network</td>
+<td><strong>Separate auth stack</strong> (decided)</td>
+</tr>
+<tr>
+<td>Auth stack location</td>
+<td>New repo vs sibling folder next to SWAG compose</td>
+<td></td>
+</tr>
+<tr>
+<td>Admin panel exposure</td>
+<td>subnet / localhost / Tailscale / public</td>
+<td><strong>Optional lock</strong> — prefer subnet or Tailscale; public discouraged</td>
+</tr>
+<tr>
+<td>Authelia storage</td>
+<td>Local vs Postgres</td>
+<td></td>
+</tr>
+<tr>
+<td>TAK groups</td>
+<td>LDAP bind vs OIDC <code>groupsClaim</code> only</td>
+<td></td>
+</tr>
+<tr>
+<td>First cutover date / enforce SSO</td>
+<td></td>
+<td></td>
+</tr>
+</tbody></table>
+
+      </article>
+      <footer class="doc-foot">
+        Source: <a href="AUTH-PLAN.md">AUTH-PLAN.md</a>
+        · <a href="./">docs home</a>
+        · <a href="https://github.com/TobiTenno/tak-home">GitHub</a>
+      </footer>
+    </main>
+  </div>
+</body>
+</html>

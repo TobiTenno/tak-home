@@ -1,6 +1,10 @@
 # tak-home
 
-Docs site: [tobitenno.github.io/tak-home](https://tobitenno.github.io/tak-home/) · [`docs/setup-guide.html`](docs/setup-guide.html) · [`docs/AUTH-PLAN.md`](docs/AUTH-PLAN.md) · [`docs/DEV-MOVE.md`](docs/DEV-MOVE.md).
+<p align="center">
+  <img src="docs/logo.png" alt="tak-home" width="128" height="128" />
+</p>
+
+Docs site: [tobitenno.github.io/tak-home](https://tobitenno.github.io/tak-home/) · [setup guide](docs/setup-guide.html) · [auth plan](docs/auth-plan.html) · [dev move](docs/dev-move.html) (sources: [`AUTH-PLAN.md`](docs/AUTH-PLAN.md), [`DEV-MOVE.md`](docs/DEV-MOVE.md)).
 
 Copy this directory to the server. One argument sets the public names:
 
