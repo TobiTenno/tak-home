@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>tak-home</title>
+  <meta name="description" content="Operator docs for the tak-home CloudTAK + TAK Server stack." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500&family=Schibsted+Grotesk:wght@700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #12160f;
+      --ink: #e8ecdf;
+      --muted: #9aa58c;
+      --line: #35402c;
+      --accent: #c4d35a;
+      --panel: #1a2116;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "IBM Plex Sans", system-ui, sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(ellipse 70% 45% at 15% -5%, #2a3820 0%, transparent 55%),
+        var(--bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 1.25rem;
+    }
+    main {
+      width: min(28rem, 100%);
+    }
+    .brand {
+      font-family: "Schibsted Grotesk", sans-serif;
+      font-weight: 700;
+      font-size: clamp(2.4rem, 8vw, 3.2rem);
+      letter-spacing: -0.04em;
+      line-height: 1;
+      color: var(--accent);
+      margin: 0 0 0.85rem;
+    }
+    p {
+      margin: 0 0 1.5rem;
+      color: var(--muted);
+      line-height: 1.55;
+      font-size: 1.05rem;
+    }
+    .cta {
+      display: inline-block;
+      font-weight: 500;
+      color: var(--bg);
+      background: var(--accent);
+      text-decoration: none;
+      padding: 0.7rem 1.1rem;
+      border-radius: 4px;
+    }
+    .cta:hover { filter: brightness(1.06); }
+    nav {
+      margin-top: 1.75rem;
+      padding-top: 1.25rem;
+      border-top: 1px solid var(--line);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem 1.25rem;
+      font-size: 0.9rem;
+    }
+    nav a { color: var(--muted); }
+    nav a:hover { color: var(--ink); }
+  </style>
+</head>
+<body>
+  <main>
+    <h1 class="brand">tak-home</h1>
+    <p>Docker-first CloudTAK + TAK Server. Operator walkthrough, SSO plan, and move notes.</p>
+    <a class="cta" href="setup-guide.html">Open setup guide</a>
+    <nav>
+      <a href="AUTH-PLAN.md">Auth plan</a>
+      <a href="DEV-MOVE.md">Dev move</a>
+      <a href="https://github.com/TobiTenno/tak-home">GitHub</a>
+    </nav>
+  </main>
+</body>
+</html>

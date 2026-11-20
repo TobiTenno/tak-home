@@ -1,6 +1,6 @@
 # tak-home
 
-Docs: [`docs/setup-guide.html`](docs/setup-guide.html) (operator walkthrough), [`docs/AUTH-PLAN.md`](docs/AUTH-PLAN.md) (SSO implementation plan), [`docs/DEV-MOVE.md`](docs/DEV-MOVE.md) (move to another machine). Index: [`docs/README.md`](docs/README.md).
+Docs site: [tobitenno.github.io/tak-home](https://tobitenno.github.io/tak-home/) · [`docs/setup-guide.html`](docs/setup-guide.html) · [`docs/AUTH-PLAN.md`](docs/AUTH-PLAN.md) · [`docs/DEV-MOVE.md`](docs/DEV-MOVE.md).
 
 Copy this directory to the server. One argument sets the public names:
 

@@ -1,9 +1,15 @@
 # Docs
 
+GitHub Pages mini-site (this folder): **https://tobitenno.github.io/tak-home/**
+
 | File | What |
 | --- | --- |
-| [setup-guide.html](./setup-guide.html) | Interactive operator guide: stack setup → maps → Authelia/LLDAP SSO → migrate |
-| [AUTH-PLAN.md](./AUTH-PLAN.md) | SSO plan — auth is **`auth-home`** (sibling); this repo only integrates |
-| [DEV-MOVE.md](./DEV-MOVE.md) | Checklist for moving development to another machine |
+| [index.html](./index.html) | Landing |
+| [setup-guide.html](./setup-guide.html) | Interactive operator guide |
+| [AUTH-PLAN.md](./AUTH-PLAN.md) | SSO plan — auth is **`auth-home`** (sibling) |
+| [DEV-MOVE.md](./DEV-MOVE.md) | Move to another machine |
 
-Root [README.md](../README.md) is the short install reference; the HTML guide is the long path.
+Deploy: push `docs/**` to `main` → workflow `.github/workflows/pages.yml`.  
+One-time: repo **Settings → Pages → Source = GitHub Actions**.
+
+Root [README.md](../README.md) is the short install reference.
