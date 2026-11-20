@@ -99,9 +99,9 @@
     nav .progress strong { color: var(--accent); font-weight: 600; }
 
     .domain-bar {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.75rem;
+      display: grid;
+      grid-template-columns: auto minmax(8rem, 1fr);
+      gap: 0.55rem 0.75rem;
       align-items: center;
       margin: 0 0 1.75rem;
       padding: 0.85rem 1rem;
@@ -113,22 +113,28 @@
       font-size: 0.85rem;
       color: var(--muted);
       font-weight: 500;
+      white-space: nowrap;
     }
     .domain-bar input {
       font-family: "IBM Plex Mono", ui-monospace, monospace;
-      font-size: 0.95rem;
+      font-size: 0.9rem;
       color: var(--ink);
       background: var(--code-bg);
       border: 1px solid var(--line);
       border-radius: 4px;
       padding: 0.4rem 0.65rem;
-      min-width: 14rem;
+      width: 100%;
+      min-width: 0;
     }
     .domain-bar input:focus {
       outline: 2px solid var(--accent-dim);
       outline-offset: 1px;
     }
-    .domain-bar .hint { font-size: 0.8rem; color: var(--muted); flex: 1 1 12rem; }
+    @media (min-width: 640px) {
+      .domain-bar {
+        grid-template-columns: auto minmax(10rem, 1fr) auto minmax(12rem, 1.4fr);
+      }
+    }
 
     main h1 {
       font-family: "Schibsted Grotesk", "IBM Plex Sans", sans-serif;
@@ -338,9 +344,12 @@
       </p>
 
       <div class="domain-bar">
-        <label for="domain">Parent domain</label>
-        <input id="domain" type="text" value="example.com" spellcheck="false" autocomplete="off" />
-        <span class="hint">Fills <code>example.com</code> in commands below (map / tiles / tak / auth hosts).</span>
+        <label for="domain">Domain</label>
+        <input id="domain" type="text" value="example.com" spellcheck="false" autocomplete="off"
+          title="Fills example.com in commands (map / tiles / tak / auth hosts)" />
+        <label for="compose">Compose file</label>
+        <input id="compose" type="text" value="../docker-compose.yml" spellcheck="false" autocomplete="off"
+          title="Relative path to the shared root compose (-f / docker compose -f)" />
       </div>
 
       <section id="overview">
@@ -438,10 +447,10 @@ networks:
       <section id="bring-up">
         <h2>3 · Bring up the stack</h2>
         <p>From the directory that holds the compose file passed to <code>-f</code>:</p>
-        <pre data-domain><code>docker compose -f docker-compose.yml up -d tak_certs tak_database tak_server</code></pre>
-        <pre data-domain><code>docker compose -f docker-compose.yml cp \
+        <pre data-domain><code>docker compose -f ../docker-compose.yml up -d tak_certs tak_database tak_server</code></pre>
+        <pre data-domain><code>docker compose -f ../docker-compose.yml cp \
   tak_server:/opt/tak/certs/files/root-ca.pem tak-home/tak-ca.pem</code></pre>
-        <pre data-domain><code>docker compose -f docker-compose.yml up -d \
+        <pre data-domain><code>docker compose -f ../docker-compose.yml up -d \
   tak_certs tak_database tak_server tak_api tak_tiles tak_events \
   tak_retention tak_media tak_postgis tak_store tak_pmtiles</code></pre>
         <div class="callout warn">
@@ -541,7 +550,7 @@ networks:
     redirectUri="https://map.example.com/api/login/oidc/callback"
     configurationUri="https://auth.example.com/.well-known/openid-configuration"/&gt;
 &lt;/oauth&gt;</code></pre>
-        <pre data-domain><code>docker compose -f docker-compose.yml restart tak_server</code></pre>
+        <pre data-domain><code>docker compose -f ../docker-compose.yml restart tak_server</code></pre>
         <div class="callout warn">
           Do <strong>not</strong> use Authelia forward-auth alone for CloudTAK.
           ATAK keeps client certs.
@@ -603,7 +612,7 @@ networks:
 
       <footer>
         Companion to <code>README.md</code> / <code>docs/AUTH-PLAN.md</code>.
-        Auth stack: sibling <code>auth-home</code>. Use the domain field above for copyable commands.
+        Auth stack: sibling <code>auth-home</code>. Domain + compose path above fill the copyable commands.
       </footer>
     </main>
   </div>
@@ -713,26 +722,35 @@ networks:
       location.reload();
     });
 
-    const PLACEHOLDER = "example.com";
+    const DOMAIN_PH = "example.com";
+    const COMPOSE_PH = "../docker-compose.yml";
     const domainInput = document.getElementById("domain");
+    const composeInput = document.getElementById("compose");
 
-    function applyDomain(domain) {
-      const d = (domain || PLACEHOLDER).trim() || PLACEHOLDER;
+    function applyPlaceholders() {
+      const d = (domainInput.value || DOMAIN_PH).trim() || DOMAIN_PH;
+      const c = (composeInput.value || COMPOSE_PH).trim() || COMPOSE_PH;
       document.querySelectorAll("pre[data-domain]").forEach((pre) => {
         const code = pre.querySelector("code");
         if (!code) return;
         if (!pre.dataset.orig) pre.dataset.orig = code.textContent;
-        code.textContent = pre.dataset.orig.split(PLACEHOLDER).join(d);
+        code.textContent = pre.dataset.orig
+          .split(DOMAIN_PH).join(d)
+          .split(COMPOSE_PH).join(c);
       });
       document.querySelectorAll("[data-domain-text]").forEach((el) => {
         if (!el.dataset.orig) el.dataset.orig = el.textContent;
-        el.textContent = el.dataset.orig.split(PLACEHOLDER).join(d);
+        el.textContent = el.dataset.orig
+          .split(DOMAIN_PH).join(d)
+          .split(COMPOSE_PH).join(c);
       });
     }
 
-    domainInput.addEventListener("input", () => applyDomain(domainInput.value));
-    domainInput.addEventListener("change", () => applyDomain(domainInput.value));
-    applyDomain(domainInput.value);
+    domainInput.addEventListener("input", applyPlaceholders);
+    domainInput.addEventListener("change", applyPlaceholders);
+    composeInput.addEventListener("input", applyPlaceholders);
+    composeInput.addEventListener("change", applyPlaceholders);
+    applyPlaceholders();
 
     document.querySelectorAll("pre").forEach((pre) => {
       const btn = document.createElement("button");
