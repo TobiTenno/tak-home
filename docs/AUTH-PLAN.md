@@ -1,7 +1,8 @@
 # Auth / SSO plan (Authelia + LLDAP)
 
-Status: **scaffolded** — sibling repo [`auth-home`](../../auth-home) (`~/projects/auth-home`): compose, `setup.sh`, `scripts/migrate-users.sh` (`--migrate-plaintext-pass`), SWAG snippet + admin expose modes.  
+Status: **scaffolded** — sibling repo [`auth-home`](../../auth-home) (`~/projects/auth-home`): compose, `setup.sh`, `scripts/migrate-users.sh` (`--bind-only`, `--migrate-plaintext-pass`), SWAG snippet + admin expose modes.  
 Operator walkthrough: [`setup-guide.html`](./setup-guide.html) (domain field + copyable commands).  
+**Boot order:** start `auth_lldap` → `./scripts/migrate-users.sh --bind-only` (creates Authelia LDAP bind user) → start `auth_authelia`. Skipping the seed → Authelia fatal `LDAP Result Code 49 Invalid Credentials`.  
 This doc remains the integration plan for CloudTAK/TAK after auth-home is up.
 
 ## Stack boundary (decided)
@@ -228,7 +229,8 @@ Same Authelia + LLDAP can issue OIDC to anything that speaks Authorization Code.
 
 ### Auth stack — bootstrap
 
-- [x] `scripts/migrate-users.sh` — `--tak-home`, `--email-domain`, `--dry-run`, `--migrate-plaintext-pass`
+- [x] `scripts/migrate-users.sh` — `--bind-only`, `--tak-home`, `--email-domain`, `--dry-run`, `--migrate-plaintext-pass`
+- [x] `--bind-only` before Authelia: create `uid=authelia` + default groups (password from `LLDAP_AUTHELIA_PASSWORD`)
 - [x] Without plaintext flag: random temps printed once; with flag: seed `USER_PASS_*`
 - [ ] Validate GraphQL mutations against live LLDAP; fix group-id edge cases if needed
 - [ ] Never commit `config/auth.env` / `config/secrets/` (gitignored) |

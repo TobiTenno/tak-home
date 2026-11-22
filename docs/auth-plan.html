@@ -53,7 +53,7 @@
     <main>
       <article>
 <h1 id="auth-sso-plan-authelia-lldap">Auth / SSO plan (Authelia + LLDAP)</h1>
-<p>Status: <strong>scaffolded</strong> — sibling repo <a href="../../auth-home"><code>auth-home</code></a> (<code>~/projects/auth-home</code>): compose, <code>setup.sh</code>, <code>scripts/migrate-users.sh</code> (<code>--migrate-plaintext-pass</code>), SWAG snippet + admin expose modes.<br>Operator walkthrough: <a href="./setup-guide.html"><code>setup-guide.html</code></a> (domain field + copyable commands).<br>This doc remains the integration plan for CloudTAK/TAK after auth-home is up.</p>
+<p>Status: <strong>scaffolded</strong> — sibling repo <a href="../../auth-home"><code>auth-home</code></a> (<code>~/projects/auth-home</code>): compose, <code>setup.sh</code>, <code>scripts/migrate-users.sh</code> (<code>--bind-only</code>, <code>--migrate-plaintext-pass</code>), SWAG snippet + admin expose modes.<br>Operator walkthrough: <a href="./setup-guide.html"><code>setup-guide.html</code></a> (domain field + copyable commands).<br><strong>Boot order:</strong> start <code>auth_lldap</code> → <code>./scripts/migrate-users.sh --bind-only</code> (creates Authelia LDAP bind user) → start <code>auth_authelia</code>. Skipping the seed → Authelia fatal <code>LDAP Result Code 49 Invalid Credentials</code>.<br>This doc remains the integration plan for CloudTAK/TAK after auth-home is up.</p>
 <h2 id="stack-boundary-decided">Stack boundary (decided)</h2>
 <p><strong>Auth is its own stack — technically separate from <code>tak-home</code>.</strong></p>
 <table>
@@ -342,7 +342,8 @@ Plaintext passwords already held in deploy secrets <strong>can</strong> be seede
 </ul>
 <h3 id="auth-stack-bootstrap">Auth stack — bootstrap</h3>
 <ul>
-<li><input checked="" disabled="" type="checkbox"> <code>scripts/migrate-users.sh</code> — <code>--tak-home</code>, <code>--email-domain</code>, <code>--dry-run</code>, <code>--migrate-plaintext-pass</code></li>
+<li><input checked="" disabled="" type="checkbox"> <code>scripts/migrate-users.sh</code> — <code>--bind-only</code>, <code>--tak-home</code>, <code>--email-domain</code>, <code>--dry-run</code>, <code>--migrate-plaintext-pass</code></li>
+<li><input checked="" disabled="" type="checkbox"> <code>--bind-only</code> before Authelia: create <code>uid=authelia</code> + default groups (password from <code>LLDAP_AUTHELIA_PASSWORD</code>)</li>
 <li><input checked="" disabled="" type="checkbox"> Without plaintext flag: random temps printed once; with flag: seed <code>USER_PASS_*</code></li>
 <li><input disabled="" type="checkbox"> Validate GraphQL mutations against live LLDAP; fix group-id edge cases if needed</li>
 <li><input disabled="" type="checkbox"> Never commit <code>config/auth.env</code> / <code>config/secrets/</code> (gitignored) |</li>

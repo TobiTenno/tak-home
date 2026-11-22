@@ -613,44 +613,44 @@ networks:
         </p>
 
         <h3>6a · auth-home setup</h3>
-        <pre data-domain><code>cd /path/to/auth-home   # your git clone is fine</code></pre>
-        <pre data-domain><code>./setup.sh example.com -f ../docker-compose.yml</code></pre>
-        <pre data-domain><code>./setup.sh example.com -f ../docker-compose.yml --admin-expose tailscale</code></pre>
-        <pre data-domain><code>./setup.sh example.com --no-swag</code></pre>
         <p>
-          With <code>-f</code>, setup writes a <strong>runtime</strong>
-          <code>auth-home/</code> next to that Compose file (compose, scripts, generated
-          env/YAML — not <code>templates/</code>), adds an include for
-          <code>auth-home/compose.yaml</code>, ensures the root networks
-          <code>auth</code> and <code>tak</code> exist, and attaches the
-          <code>swag</code> service to both. Always run setup from the git clone.
-          Use <code>--admin-expose</code> with
-          <code>subnet</code>, <code>localhost</code>, <code>tailscale</code>, or
-          <code>public</code> to control who can reach the admin UIs.
-          <code>--no-swag</code> publishes host ports via <code>compose.no-swag.yaml</code>
-          instead of relying on the proxy.
-          Containers are named <code>auth_lldap</code>, <code>auth_authelia</code>, and
-          (optionally) <code>auth_authelia_admin</code>.
+          Always run setup from the git clone. With <code>-f</code>, it writes a
+          <strong>runtime</strong> <code>auth-home/</code> next to that Compose file
+          (compose, scripts, generated env/YAML — not <code>templates/</code>),
+          <code>include:</code>s <code>auth-home/compose.yaml</code>, ensures networks
+          <code>auth</code> + <code>tak</code>, and attaches <code>swag</code> to both.
+          Optional flags: <code>--admin-expose subnet|localhost|tailscale|public</code>
+          (admin UI allowlist); <code>--no-swag</code> (host ports via
+          <code>compose.no-swag.yaml</code> instead of the proxy).
         </p>
-        <p><strong>By name</strong> (preferred on a shared root Compose — same idea as TAK):</p>
-        <pre data-domain><code>docker compose up -d auth_lldap auth_authelia</code></pre>
-        <pre data-domain><code>docker compose up -d auth_lldap auth_authelia auth_authelia_admin</code></pre>
-        <pre data-domain><code>docker compose -f compose.yaml -f compose.no-swag.yaml up -d auth_lldap auth_authelia</code></pre>
+        <pre data-domain><code>cd /path/to/auth-home
+./setup.sh example.com -f ../docker-compose.yml</code></pre>
         <p>
-          <strong>By profile</strong> (fine in a standalone auth-home project). On a shared
-          root Compose file, <code>--profile auth</code> also starts every service that has
-          no profile:
+          Then start containers <strong>by service name</strong> (preferred on a shared
+          root Compose — same idea as TAK). Authelia’s LDAP bind user is not created by
+          Compose; seed it after LLDAP is up:
         </p>
-        <pre data-domain><code>docker compose --profile auth up -d</code></pre>
-        <pre data-domain><code>docker compose --profile auth --profile admin up -d</code></pre>
-        <pre data-domain><code>docker compose -f compose.yaml -f compose.no-swag.yaml --profile auth up -d</code></pre>
-        <pre data-domain><code>cp swag/auth.conf /path/to/swag/config/nginx/site-confs/</code></pre>
-        <pre data-domain><code>docker exec swag nginx -t && docker exec swag nginx -s reload</code></pre>
-        <p>After SWAG is proxying auth, confirm OIDC discovery:</p>
-        <pre data-domain><code>curl -sk https://auth.example.com/.well-known/openid-configuration | head</code></pre>
+        <pre data-domain><code>docker compose up -d auth_lldap
+./scripts/migrate-users.sh --bind-only
+docker compose up -d auth_authelia
+docker compose up -d auth_authelia_admin   # optional</code></pre>
         <p>
-          Client ID and secret for CloudTAK are written to
-          <code>auth-home/config/secrets/cloudtak-oidc.txt</code>.
+          <strong>Only if</strong> you used <code>--no-swag</code>, prefix those
+          <code>docker compose</code> lines with
+          <code>-f compose.yaml -f compose.no-swag.yaml</code>.
+        </p>
+        <p>
+          <strong>Profile alternative</strong> (standalone auth-home only — on a shared
+          root Compose, <code>--profile auth</code> also starts every unprofiled service):
+          <code>docker compose --profile auth up -d</code>, then still run
+          <code>--bind-only</code>, then bring Authelia back up if it exited. Add
+          <code>--profile admin</code> for the admin UI.
+        </p>
+        <pre data-domain><code>cp swag/auth.conf /path/to/swag/config/nginx/site-confs/
+docker exec swag nginx -t && docker exec swag nginx -s reload
+curl -sk https://auth.example.com/.well-known/openid-configuration | head</code></pre>
+        <p>
+          CloudTAK client ID/secret: <code>auth-home/config/secrets/cloudtak-oidc.txt</code>.
         </p>
 
         <h3>6b · CloudTAK Admin → Login</h3>
@@ -707,18 +707,19 @@ networks:
             <tr><td>ATAK client certificates</td><td>Leave them as-is; they keep working</td></tr>
           </tbody>
         </table>
-        <p>From your <code>auth-home</code> deploy (adjust the path to tak-home if needed):</p>
-        <pre data-domain><code>./scripts/migrate-users.sh --tak-home ../tak-home --email-domain example.com --dry-run</code></pre>
-        <p>Without plaintext secrets, the script assigns random temporary passwords (printed once):</p>
-        <pre data-domain><code>./scripts/migrate-users.sh --tak-home ../tak-home --email-domain example.com</code></pre>
         <p>
-          If you still have plaintext passwords from an earlier deploy, seed them from
-          tak-home’s <code>config/secrets.env</code> (<code>USER_PASS_*</code>) as the
-          initial LLDAP passwords:
+          From the <code>auth-home</code> deploy. Bind user was seeded in step 6
+          (<code>--bind-only</code>); a full migrate also creates/resets it.
+          Dry-run first, then drop <code>--dry-run</code>:
         </p>
-        <pre data-domain><code>./scripts/migrate-users.sh --tak-home ../tak-home --email-domain example.com --migrate-plaintext-pass</code></pre>
-        <pre data-domain><code>./scripts/migrate-users.sh --tak-home ../tak-home --email-domain example.com --migrate-plaintext-pass --dry-run</code></pre>
-        <p>Or supply a TSV (<code>username&lt;TAB&gt;email[&lt;TAB&gt;password]</code>):</p>
+        <pre data-domain><code>./scripts/migrate-users.sh --tak-home ../tak-home --email-domain example.com --dry-run
+./scripts/migrate-users.sh --tak-home ../tak-home --email-domain example.com</code></pre>
+        <p>
+          Add <code>--migrate-plaintext-pass</code> to seed
+          <code>USER_PASS_*</code> from tak-home <code>config/secrets.env</code>
+          (otherwise random temps print once). Or use a TSV
+          (<code>username&lt;TAB&gt;email[&lt;TAB&gt;password]</code>):
+        </p>
         <pre data-domain><code>./scripts/migrate-users.sh --users-file ./users.tsv --migrate-plaintext-pass</code></pre>
         <ol>
           <li>Dry-run first and confirm the emails match existing CloudTAK usernames.</li>
@@ -790,7 +791,7 @@ networks:
       ],
       auth: [
         "Ran auth-home ./setup.sh for the parent domain",
-        "Started auth_lldap + auth_authelia by name (and auth_authelia_admin if needed)",
+        "Started auth_lldap, ran migrate-users.sh --bind-only, then started auth_authelia",
         "Copied swag/auth.conf, set ADMIN_EXPOSE, and reloaded nginx after nginx -t",
         "Enabled CloudTAK OIDC with enforce still off; SSO login works",
         "Added CoreConfig oauth, restarted tak_server, and confirmed a new SSO user gets a cert",

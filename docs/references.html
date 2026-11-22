@@ -165,10 +165,17 @@
 <td><a href="https://github.com/asalimonov/authelia-admin">authelia-admin</a></td>
 </tr>
 </tbody></table>
+<p>
+  Boot: start <code>auth_lldap</code>, run
+  <code>./scripts/migrate-users.sh --bind-only</code> (creates Authelia’s LDAP bind
+  user), then start <code>auth_authelia</code>. Skipping that seed →
+  <code>LDAP Result Code 49 Invalid Credentials</code>.
+</p>
 <p>Integration notes we follow:</p>
 <ul>
 <li>Authelia ↔ LLDAP: <a href="https://www.authelia.com/integration/ldap/lldap/">authelia.com/integration/ldap/lldap</a></li>
 <li>OIDC clients: <a href="https://www.authelia.com/integration/openid-connect/clients/">authelia.com/integration/openid-connect/clients</a></li>
+<li>Operator steps: <a href="setup-guide.html">setup-guide.html</a> §6 / §7</li>
 </ul>
 <h2 id="reverse-proxy-operator-provided">Reverse proxy (operator-provided)</h2>
 <p>This repo does not ship the SWAG container, but the setup guide assumes <a href="https://docs.linuxserver.io/images/docker-swag/">linuxserver/swag</a> (Let&#39;s Encrypt + nginx).<br>Image: <a href="https://fleet.linuxserver.io/image?name=linuxserver/swag">lscr.io/linuxserver/swag</a>.</p>
