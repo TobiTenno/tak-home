@@ -16,3 +16,4 @@ maps/data/*.json
 maps/data/extract.json
 maps/data/sprites/
 datapackages/
+docs/.ref/
