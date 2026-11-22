@@ -618,7 +618,8 @@ networks:
           <strong>runtime</strong> <code>auth-home/</code> next to that Compose file
           (compose, scripts, generated env/YAML — not <code>templates/</code>),
           <code>include:</code>s <code>auth-home/compose.yaml</code>, ensures networks
-          <code>auth</code> + <code>tak</code>, and attaches <code>swag</code> to both.
+          <code>auth</code> + <code>tak</code> as <code>external: true</code> (and creates
+          them if missing), and attaches <code>swag</code> to both.
           Optional flags: <code>--admin-expose subnet|localhost|tailscale|public</code>
           (admin UI allowlist); <code>--no-swag</code> (host ports via
           <code>compose.no-swag.yaml</code> instead of the proxy).
