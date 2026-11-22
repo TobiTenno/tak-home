@@ -9,7 +9,10 @@ GitHub Pages mini-site (this folder): **https://tobitenno.github.io/tak-home/**
 | [setup-guide.html](./setup-guide.html) | Interactive operator guide |
 | [auth-plan.html](./auth-plan.html) | SSO plan (from [`AUTH-PLAN.md`](./AUTH-PLAN.md)) — auth is **`auth-home`** |
 | [dev-move.html](./dev-move.html) | Move notes (from [`DEV-MOVE.md`](./DEV-MOVE.md)) |
-| [site.css](./site.css) / [render_md.mjs](./render_md.mjs) | Shared docs chrome + MD→HTML build |
+| [references.html](./references.html) | Container & map data citations |
+| [security.html](./security.html) | Hardening reminders + external guides |
+| [site.css](./site.css) / [nav-mobile.js](./nav-mobile.js) | Shared chrome + collapsible mobile nav |
+| [render_md.mjs](./render_md.mjs) | MD→HTML build for AUTH-PLAN / DEV-MOVE |
 
 Deploy: push `docs/**` to `main` → workflow renders markdown then publishes.  
 One-time: repo **Settings → Pages → Source = GitHub Actions**.  

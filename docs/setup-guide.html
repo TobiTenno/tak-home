@@ -29,7 +29,12 @@
     }
 
     * { box-sizing: border-box; }
-    html { scroll-behavior: smooth; }
+    html {
+      scroll-behavior: smooth;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+    html::-webkit-scrollbar { display: none; }
     body {
       margin: 0;
       font-family: "IBM Plex Sans", system-ui, sans-serif;
@@ -41,7 +46,10 @@
         radial-gradient(ellipse 60% 40% at 100% 0%, #1e2a28 0%, transparent 50%),
         var(--bg);
       min-height: 100vh;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
     }
+    body::-webkit-scrollbar { display: none; }
 
     a { color: var(--accent); text-underline-offset: 3px; }
     a:hover { color: #dce878; }
@@ -60,7 +68,34 @@
       top: 1rem;
       align-self: start;
       font-size: 0.85rem;
+      z-index: 100;
+      background: var(--bg);
     }
+    main {
+      position: relative;
+      z-index: 0;
+      min-width: 0;
+    }
+    .side-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+    }
+    .nav-toggle {
+      display: none;
+      font: inherit;
+      font-size: 0.8rem;
+      font-weight: 500;
+      cursor: pointer;
+      color: var(--bg);
+      background: var(--accent);
+      border: 0;
+      border-radius: var(--radius);
+      padding: 0.4rem 0.75rem;
+      flex-shrink: 0;
+    }
+    .nav-toggle:hover { filter: brightness(1.06); }
     nav .brand {
       font-family: "Schibsted Grotesk", "IBM Plex Sans", sans-serif;
       font-weight: 700;
@@ -73,6 +108,7 @@
       gap: 0.55rem;
       text-decoration: none;
     }
+    .side-top .brand { margin-bottom: 0; }
     nav .brand img {
       width: 1.75rem;
       height: 1.75rem;
@@ -235,10 +271,13 @@
       border: 1px solid var(--line);
       border-radius: var(--radius);
       overflow-x: auto;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
       font-family: "IBM Plex Mono", ui-monospace, monospace;
       font-size: 0.82rem;
       line-height: 1.5;
     }
+    pre::-webkit-scrollbar { display: none; }
     pre button.copy {
       position: absolute;
       top: 0.4rem;
@@ -312,25 +351,50 @@
       font-size: 0.85rem;
     }
 
-    @media (max-width: 860px) {
+    @media (max-width: 960px) {
       .wrap {
         grid-template-columns: 1fr;
-        gap: 1.25rem;
+        gap: 1rem;
+        padding-top: 0;
       }
       nav {
-        position: static;
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        margin: 0 -1.25rem 0.75rem;
+        padding: 0.75rem 1.25rem;
+        background: #12160f;
+        border-bottom: 1px solid var(--line);
       }
+      .nav-toggle { display: inline-flex; align-items: center; }
+      nav .side-panel { display: none; }
+      nav.is-open .side-panel {
+        display: block;
+        margin-top: 0.85rem;
+        padding-top: 0.85rem;
+        border-top: 1px solid var(--line);
+        max-height: min(70vh, 28rem);
+        overflow-y: auto;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+      }
+      nav.is-open .side-panel::-webkit-scrollbar { display: none; }
       nav ol {
         display: flex;
         flex-wrap: wrap;
         gap: 0.25rem 0.75rem;
         border: none;
       }
-      nav a {
+      nav .side-panel a {
         border: none;
         margin: 0;
         padding: 0.2rem 0;
       }
+      nav .progress { margin-top: 0.85rem; }
+    }
+    @media (min-width: 961px) {
+      nav .side-panel { display: block; }
+      .nav-toggle { display: none !important; }
     }
   </style>
 </head>
@@ -355,36 +419,39 @@
     <main id="top">
       <h1>Setup guide</h1>
       <p class="lede">
-        Walk through a Docker-first CloudTAK + TAK Server stack behind SWAG,
-        optional T.Rex maps, then Authelia + LLDAP for SSO (separate
-        <code>auth-home</code> stack). Checkboxes stick in this browser.
-        Each command block has its own Copy button.
+        This walkthrough sets up a Docker-first CloudTAK + TAK Server stack behind SWAG,
+        optional T.Rex maps, and Authelia + LLDAP for SSO (in a separate
+        <code>auth-home</code> stack). Your checklist progress is saved in this browser.
+        Use the Copy button on any command block to grab it for the terminal.
       </p>
 
       <div class="domain-bar">
         <label for="domain">Domain</label>
         <input id="domain" type="text" value="example.com" spellcheck="false" autocomplete="off"
-          title="Fills example.com in commands (map / tiles / tak / auth hosts)" />
+          title="Replaces example.com in the commands below (map / tiles / tak / auth hosts)" />
         <label for="compose">Compose file</label>
         <input id="compose" type="text" value="../docker-compose.yml" spellcheck="false" autocomplete="off"
-          title="Relative path to the shared root compose (-f / docker compose -f)" />
+          title="Path to your shared root compose file (-f / docker compose -f)" />
       </div>
 
       <section id="overview">
         <h2>What you get</h2>
         <table>
-          <thead><tr><th>Name</th><th>Use</th></tr></thead>
+          <thead><tr><th>Hostname</th><th>Role</th></tr></thead>
           <tbody>
-            <tr><td><code>map.&lt;domain&gt;</code></td><td>CloudTAK web (Let’s Encrypt via SWAG)</td></tr>
+            <tr><td><code>map.&lt;domain&gt;</code></td><td>CloudTAK web UI (Let’s Encrypt via SWAG)</td></tr>
             <tr><td><code>tiles.&lt;domain&gt;</code></td><td>CloudTAK tiles / Hosted PMTiles</td></tr>
-            <tr><td><code>tak.&lt;domain&gt;</code></td><td>ATAK (8089+) — TAK private CA, stream passthrough</td></tr>
-            <tr><td><code>auth.&lt;domain&gt;</code></td><td>Authelia (+ optional <code>/auth-admin/</code>)</td></tr>
+            <tr><td><code>tak.&lt;domain&gt;</code></td><td>ATAK (8089 and related ports) — TAK private CA, stream passthrough</td></tr>
+            <tr><td><code>auth.&lt;domain&gt;</code></td><td>Authelia login (optional admin UI at <code>/auth-admin/</code>)</td></tr>
           </tbody>
         </table>
         <div class="callout warn">
-          <strong>Two cert worlds.</strong> Map/tiles = SWAG LE. TAK ports = private CA.
-          Never copy TAK <code>*.pem</code> / <code>*.p12</code> into SWAG <code>/config/keys</code>.
-          Leave <code>tak</code> out of Let’s Encrypt <code>SUBDOMAINS</code>.
+          <strong>Two certificate worlds.</strong>
+          Map and tiles use SWAG’s Let’s Encrypt certificates.
+          TAK client ports use the TAK private CA.
+          Do not copy TAK <code>*.pem</code> / <code>*.p12</code> files into SWAG’s
+          <code>/config/keys</code>, and leave <code>tak</code> out of Let’s Encrypt
+          <code>SUBDOMAINS</code>.
         </div>
         <div class="diagram"><span class="hl">browser</span>
   │ HTTPS 443
@@ -402,26 +469,33 @@
 
       <section id="copy-setup">
         <h2>1 · Copy &amp; run setup</h2>
-        <p>On the server, copy this tree next to your shared compose file, then:</p>
+        <p>
+          On the server, place this project next to your shared Compose file, then run
+          setup (the two forms below are equivalent):
+        </p>
         <pre data-domain><code>./setup.sh example.com -f ../docker-compose.yml</code></pre>
         <pre data-domain><code>./setup.sh -h example.com --file ../docker-compose.yml</code></pre>
         <pre data-domain><code>./setup.sh example.com -p opentopomap</code></pre>
-        <p>Default map provider is <code>trex</code>.</p>
+        <p>The default map provider is <code>trex</code>; pass <code>-p</code> to choose another.</p>
         <p>
-          <code>-f</code> picks the compose file to include. Generated files land in
-          <code>tak-home/</code> beside that file. Include path is
-          <code>tak-home/compose.yaml</code>.
+          <code>-f</code> points at the root Compose file to update. Setup copies the stack
+          into a <code>tak-home/</code> directory beside that file and adds an
+          <code>include</code> for <code>tak-home/compose.yaml</code>.
         </p>
         <p>
-          Re-running setup rewrites hostnames and keeps secrets already in
-          <code>config/secrets.env</code> and <code>config/cloudtak.env</code>.
+          You can safely re-run setup later: it refreshes hostnames but keeps secrets
+          already present in <code>config/secrets.env</code> and <code>config/cloudtak.env</code>.
         </p>
         <ul class="checklist" data-section="setup"></ul>
       </section>
 
       <section id="swag">
         <h2>2 · Wire SWAG</h2>
-        <p>Stack publishes <strong>no host ports</strong>. Everything lives on Docker network <code>tak</code>.</p>
+        <p>
+          This stack does <strong>not</strong> publish host ports itself. Services talk on the
+          Docker network <code>tak</code>; SWAG should join that network and publish the
+          public ports:
+        </p>
         <pre data-domain><code>services:
   swag:
     networks:
@@ -435,36 +509,41 @@
 networks:
   tak:
     name: tak</code></pre>
-        <p>Copy generated confs:</p>
+        <p>Install the generated nginx snippets into SWAG:</p>
         <table>
-          <thead><tr><th>File</th><th>SWAG path</th></tr></thead>
+          <thead><tr><th>Generated file</th><th>Copy into SWAG</th></tr></thead>
           <tbody>
             <tr><td><code>swag/cloudtak.conf</code></td><td><code>/config/nginx/site-confs/</code></td></tr>
-            <tr><td><code>swag/tak-stream.conf</code></td><td><code>/config/nginx/stream-confs/</code> — not site-confs</td></tr>
+            <tr><td><code>swag/tak-stream.conf</code></td><td><code>/config/nginx/stream-confs/</code> (not site-confs)</td></tr>
           </tbody>
         </table>
-        <p>In SWAG <code>nginx.conf</code>, add a top-level <code>stream</code> block (sibling of <code>http</code>):</p>
+        <p>
+          In SWAG’s <code>nginx.conf</code>, add a top-level <code>stream</code> block next to
+          <code>http</code> so the stream configs load:
+        </p>
         <pre data-domain><code>stream {
     include /config/nginx/stream-confs/*.conf;
 }</code></pre>
         <pre data-domain><code>docker exec swag nginx -t && docker exec swag nginx -s reload</code></pre>
         <pre data-domain><code>docker exec swag netstat -tlnp | grep -E '443|8089|8443'</code></pre>
         <div class="callout">
-          Map vhost <code>location /</code> must proxy to <code>tak_api.tak:5000</code>
-          (or <code>tak_api</code> on the same network). <code>/pmtiles/</code> → <code>tak_pmtiles</code>;
-          tiles host → <code>tak_tiles:5002</code>.
+          On the map vhost, <code>location /</code> should proxy to
+          <code>tak_api.tak:5000</code> (or <code>tak_api</code> on the same network).
+          Route <code>/pmtiles/</code> to <code>tak_pmtiles</code>, and the tiles host to
+          <code>tak_tiles:5002</code>.
         </div>
         <p>
-          CSP for remote basemaps (T.Rex hillshade + Google) lives in
-          <code>config/cloudtak.env</code> as <code>NGINX_CSP_IMG_SRC</code> /
-          <code>NGINX_CSP_CONNECT_SRC</code>. Recreate <code>tak_api</code> after edits.
+          If you use remote basemaps (T.Rex hillshade, Google, and similar), set
+          <code>NGINX_CSP_IMG_SRC</code> and <code>NGINX_CSP_CONNECT_SRC</code> in
+          <code>config/cloudtak.env</code>, then recreate <code>tak_api</code> so the
+          headers pick up the change.
         </p>
         <ul class="checklist" data-section="swag"></ul>
       </section>
 
       <section id="bring-up">
         <h2>3 · Bring up the stack</h2>
-        <p>From the directory that holds the compose file passed to <code>-f</code>:</p>
+        <p>From the directory that contains the Compose file you passed to <code>-f</code>:</p>
         <pre data-domain><code>docker compose -f ../docker-compose.yml up -d tak_certs tak_database tak_server</code></pre>
         <pre data-domain><code>docker compose -f ../docker-compose.yml cp \
   tak_server:/opt/tak/certs/files/root-ca.pem tak-home/tak-ca.pem</code></pre>
@@ -472,94 +551,119 @@ networks:
   tak_certs tak_database tak_server tak_api tak_tiles tak_events \
   tak_retention tak_media tak_postgis tak_store tak_pmtiles</code></pre>
         <div class="callout warn">
-          <code>--profile tak</code> also starts every service with <strong>no</strong> profile.
-          Prefer naming services as above.
+          Using <code>--profile tak</code> also starts every service that has
+          <strong>no</strong> profile. Prefer listing the services you want, as above.
         </div>
-        <p>Smoke (expect <code>401</code> — API up through SWAG):</p>
+        <p>Quick check that the API is reachable through SWAG (a <code>401</code> means it is up):</p>
         <pre data-domain><code>curl -sk -o /dev/null -w '%{http_code}\n' https://map.example.com/api/server</code></pre>
         <ul class="checklist" data-section="bringup"></ul>
       </section>
 
       <section id="maps">
         <h2>4 · Maps (T.Rex / Hosted)</h2>
-        <p>On the server, when the provider has a <code>fetch.sh</code>:</p>
+        <p>
+          If your chosen provider ships a <code>fetch.sh</code>, run it on the server to
+          pull tiles (and related assets):
+        </p>
         <pre data-domain><code>./maps/fetch.sh</code></pre>
         <pre data-domain><code>./maps/fetch.sh --regions ks,mo,ar</code></pre>
         <pre data-domain><code>./maps/fetch.sh --regions conus --elevation</code></pre>
         <pre data-domain><code>./maps/fetch.sh --sprites-only</code></pre>
         <p>
-          Region ids: <code>maps/providers/trex/regions.tsv</code>.
-          Sprites are proprietary / gitignored — local deploy only.
+          Region IDs are listed in <code>maps/providers/trex/regions.tsv</code>.
+          Sprites are proprietary and gitignored — keep them on the deploy host only.
         </p>
         <pre data-domain><code>./maps/render-basemap.sh --hosted \
   --tiles-host tiles.example.com --features ks-mo-features</code></pre>
         <pre data-domain><code>./maps/publish-garage.sh</code></pre>
         <pre data-domain><code>./maps/publish-garage.sh --as ks-mo-features features.pmtiles</code></pre>
         <div class="callout">
-          Hosted URL tile vars must be <code>{$z}/{$x}/{$y}</code> (dollar), not
-          <code>{z}</code>. After Garage republish, script restarts <code>tak_tiles</code>
-          so stale ETags do not 412/500. Protocol for Garage PMTiles in CloudTAK =
-          <code>hosted</code> + <code>vector</code> (not a <code>pmtiles</code> enum).
+          Hosted tile URLs must use <code>{$z}/{$x}/{$y}</code> (with the dollar signs),
+          not bare <code>{z}</code>. After publishing to Garage, the script restarts
+          <code>tak_tiles</code> so stale ETags do not cause 412/500 errors.
+          In CloudTAK, Garage PMTiles should use protocol <code>hosted</code> with type
+          <code>vector</code> — not a <code>pmtiles</code> protocol value.
         </div>
         <ul class="checklist" data-section="maps"></ul>
       </section>
 
       <section id="enroll">
         <h2>5 · ATAK enrollment</h2>
-        <p>After TAK is up, build a datapackage with the same DNS name on the cert:</p>
+        <p>
+          Once TAK Server is up, build a datapackage whose hostname matches the name
+          on the certificate:
+        </p>
         <pre data-domain><code>./make-datapackage.sh tak.example.com</code></pre>
-        <p>Install the package in ATAK; trust the TAK private CA (not the LE cert).</p>
+        <p>
+          Install that package in ATAK and trust the TAK private CA — not the Let’s Encrypt
+          certificate used for the map site.
+        </p>
         <ul class="checklist" data-section="enroll"></ul>
       </section>
 
       <section id="auth">
         <h2>6 · Authelia + LLDAP SSO</h2>
         <p>
-          Auth lives in a <strong>separate</strong> sibling project <code>auth-home</code>
-          (not this compose). Authelia = login / 2FA / OIDC; LLDAP = users/groups;
-          optional <code>authelia-admin</code> at <code>https://auth.example.com/auth-admin/</code>.
-          Plan: <a href="auth-plan.html">Auth plan</a>.
+          Identity lives in a <strong>separate</strong> sibling project,
+          <code>auth-home</code> — not inside this Compose stack.
+          Authelia handles login, 2FA, and OIDC; LLDAP is the user directory;
+          an optional admin UI is available at
+          <code>https://auth.example.com/auth-admin/</code>.
+          See the <a href="auth-plan.html">auth plan</a> for the longer design notes.
         </p>
 
         <h3>6a · auth-home setup</h3>
-        <pre data-domain><code>cd ../auth-home</code></pre>
+        <pre data-domain><code>cd /path/to/auth-home   # your git clone is fine</code></pre>
         <pre data-domain><code>./setup.sh example.com -f ../docker-compose.yml</code></pre>
         <pre data-domain><code>./setup.sh example.com -f ../docker-compose.yml --admin-expose tailscale</code></pre>
         <pre data-domain><code>./setup.sh example.com --no-swag</code></pre>
         <p>
-          <code>-f</code> includes this stack, adds root <code>networks.auth</code> + <code>tak</code>,
-          attaches <code>swag</code> to both. <code>--admin-expose</code>:
-          <code>subnet</code> | <code>localhost</code> | <code>tailscale</code> | <code>public</code>.
-          <code>--no-swag</code> publishes host ports via <code>compose.no-swag.yaml</code>.
-          Containers: <code>auth_lldap</code>, <code>auth_authelia</code>, <code>auth_authelia_admin</code>.
+          With <code>-f</code>, setup copies the stack next to that Compose file as
+          <code>auth-home/</code> (same idea as tak-home), adds an include for
+          <code>auth-home/compose.yaml</code>, ensures the root networks
+          <code>auth</code> and <code>tak</code> exist, and attaches the
+          <code>swag</code> service to both.
+          Use <code>--admin-expose</code> with
+          <code>subnet</code>, <code>localhost</code>, <code>tailscale</code>, or
+          <code>public</code> to control who can reach the admin UIs.
+          <code>--no-swag</code> publishes host ports via <code>compose.no-swag.yaml</code>
+          instead of relying on the proxy.
+          Containers are named <code>auth_lldap</code>, <code>auth_authelia</code>, and
+          (optionally) <code>auth_authelia_admin</code>.
         </p>
         <pre data-domain><code>docker compose --profile auth up -d</code></pre>
         <pre data-domain><code>docker compose --profile auth --profile admin up -d</code></pre>
         <pre data-domain><code>docker compose -f compose.yaml -f compose.no-swag.yaml --profile auth up -d</code></pre>
         <pre data-domain><code>cp swag/auth.conf /path/to/swag/config/nginx/site-confs/</code></pre>
         <pre data-domain><code>docker exec swag nginx -t && docker exec swag nginx -s reload</code></pre>
-        <p>Discovery (after SWAG):</p>
+        <p>After SWAG is proxying auth, confirm OIDC discovery:</p>
         <pre data-domain><code>curl -sk https://auth.example.com/.well-known/openid-configuration | head</code></pre>
-        <p>CloudTAK OIDC paste values: <code>auth-home/config/secrets/cloudtak-oidc.txt</code>.</p>
+        <p>
+          Client ID and secret for CloudTAK are written to
+          <code>auth-home/config/secrets/cloudtak-oidc.txt</code>.
+        </p>
 
         <h3>6b · CloudTAK Admin → Login</h3>
         <table>
           <thead><tr><th>Field</th><th>Value</th></tr></thead>
           <tbody>
-            <tr><td>Enable OIDC SSO</td><td>on</td></tr>
-            <tr><td>Enforce SSO</td><td><strong>off</strong> until tested</td></tr>
+            <tr><td>Enable OIDC SSO</td><td>On</td></tr>
+            <tr><td>Enforce SSO</td><td><strong>Off</strong> until you have tested login</td></tr>
             <tr><td>Provider Name</td><td>e.g. Authelia</td></tr>
             <tr><td>OIDC Discovery URL</td><td><code>https://auth.example.com/.well-known/openid-configuration</code></td></tr>
-            <tr><td>Client ID / Secret</td><td>from <code>cloudtak-oidc.txt</code></td></tr>
-            <tr><td>Redirect / Scopes</td><td>leave blank for defaults</td></tr>
+            <tr><td>Client ID / Secret</td><td>From <code>cloudtak-oidc.txt</code></td></tr>
+            <tr><td>Redirect / Scopes</td><td>Leave blank for defaults</td></tr>
           </tbody>
         </table>
         <div class="callout danger">
-          IdP <strong>must</strong> return an <code>email</code> claim. CloudTAK username = email.
+          The identity provider <strong>must</strong> return an <code>email</code> claim.
+          CloudTAK uses that email as the username.
         </div>
 
         <h3>6c · TAK Server CoreConfig</h3>
-        <p>Needed so <em>new</em> SSO users can enroll a cert:</p>
+        <p>
+          Add OAuth to CoreConfig so <em>new</em> SSO users can enroll a client certificate:
+        </p>
         <pre data-domain><code>&lt;oauth usernameClaim="email"&gt;
   &lt;openIdDiscoveryConfiguration
     name="cloudtak-sso"
@@ -570,13 +674,14 @@ networks:
 &lt;/oauth&gt;</code></pre>
         <pre data-domain><code>docker compose -f ../docker-compose.yml restart tak_server</code></pre>
         <div class="callout warn">
-          Do <strong>not</strong> use Authelia forward-auth alone for CloudTAK.
-          ATAK keeps client certs.
+          Do <strong>not</strong> put Authelia forward-auth alone in front of CloudTAK —
+          CloudTAK needs its own OIDC session. ATAK continues to use client certificates.
         </div>
         <h3>Other apps</h3>
         <p>
-          Same auth stack: extra OIDC clients outside <code>tak-home</code>. Prefer native OIDC
-          over forward-auth when the app has its own session.
+          You can point other apps at the same auth stack by adding OIDC clients outside
+          <code>tak-home</code>. Prefer native OIDC when the app has its own session model;
+          reserve forward-auth for simpler cases.
         </p>
         <ul class="checklist" data-section="auth"></ul>
       </section>
@@ -584,42 +689,47 @@ networks:
       <section id="migrate">
         <h2>7 · Migrate existing users</h2>
         <table>
-          <thead><tr><th>Thing</th><th>Migrate?</th></tr></thead>
+          <thead><tr><th>What</th><th>Can you migrate it?</th></tr></thead>
           <tbody>
-            <tr><td>Emails / usernames</td><td>Yes → LLDAP <code>uid</code> + <code>mail</code></td></tr>
-            <tr><td>Password hashes</td><td><strong>No</strong> — LLDAP OPAQUE</td></tr>
-            <tr><td>Plaintext <code>USER_PASS_*</code></td><td><strong>Yes</strong> with <code>--migrate-plaintext-pass</code></td></tr>
-            <tr><td>ATAK client certs</td><td>Keep working</td></tr>
+            <tr><td>Emails / usernames</td><td>Yes — into LLDAP <code>uid</code> and <code>mail</code></td></tr>
+            <tr><td>Password hashes</td><td><strong>No</strong> — LLDAP uses OPAQUE; foreign hashes will not import</td></tr>
+            <tr><td>Plaintext <code>USER_PASS_*</code></td><td><strong>Yes</strong> — use <code>--migrate-plaintext-pass</code></td></tr>
+            <tr><td>ATAK client certificates</td><td>Leave them as-is; they keep working</td></tr>
           </tbody>
         </table>
-        <p>From <code>auth-home</code> (path to your tak-home deploy may differ):</p>
+        <p>From your <code>auth-home</code> deploy (adjust the path to tak-home if needed):</p>
         <pre data-domain><code>./scripts/migrate-users.sh --tak-home ../tak-home --email-domain example.com --dry-run</code></pre>
-        <p>Random temp passwords (printed once):</p>
+        <p>Without plaintext secrets, the script assigns random temporary passwords (printed once):</p>
         <pre data-domain><code>./scripts/migrate-users.sh --tak-home ../tak-home --email-domain example.com</code></pre>
         <p>
-          <strong>I have plaintext passwords from an old version</strong> — seed
-          <code>USER_PASS_*</code> from tak-home <code>config/secrets.env</code> as initial LLDAP passwords:
+          If you still have plaintext passwords from an earlier deploy, seed them from
+          tak-home’s <code>config/secrets.env</code> (<code>USER_PASS_*</code>) as the
+          initial LLDAP passwords:
         </p>
         <pre data-domain><code>./scripts/migrate-users.sh --tak-home ../tak-home --email-domain example.com --migrate-plaintext-pass</code></pre>
         <pre data-domain><code>./scripts/migrate-users.sh --tak-home ../tak-home --email-domain example.com --migrate-plaintext-pass --dry-run</code></pre>
-        <p>Or a TSV (<code>username&lt;TAB&gt;email[&lt;TAB&gt;password]</code>):</p>
+        <p>Or supply a TSV (<code>username&lt;TAB&gt;email[&lt;TAB&gt;password]</code>):</p>
         <pre data-domain><code>./scripts/migrate-users.sh --users-file ./users.tsv --migrate-plaintext-pass</code></pre>
         <ol>
-          <li>Dry-run first; confirm emails match CloudTAK usernames.</li>
-          <li>SSO with enforce <strong>off</strong>; same email → existing profile.</li>
-          <li>Then set <code>oidc::enforced</code>.</li>
+          <li>Dry-run first and confirm the emails match existing CloudTAK usernames.</li>
+          <li>Turn on SSO with enforce still <strong>off</strong>; matching emails reuse the existing profile.</li>
+          <li>When you are ready, set <code>oidc::enforced</code>.</li>
         </ol>
         <div class="callout">
-          Locked out after enforce? Admin token
+          Locked out after enabling enforce? Use an admin token to
           <code>PUT /api/config</code> with <code>{"oidc::enforced": false}</code>,
-          or delete that settings row in the CloudTAK DB.
+          or delete that settings row in the CloudTAK database.
         </div>
         <ul class="checklist" data-section="migrate"></ul>
       </section>
 
       <section id="checks">
         <h2>Master checklist</h2>
-        <p>All steps above roll up here. Checks + domain/compose path stay in <code>localStorage</code> on this browser so you can stop mid-guide and return later.</p>
+        <p>
+          Every step above is collected here. Checklist state, plus the domain and compose
+          path fields, are stored in this browser’s <code>localStorage</code> so you can
+          pause mid-guide and come back later.
+        </p>
         <p>
           <button type="button" id="reset-checks" style="font:inherit;cursor:pointer;background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:var(--radius);padding:0.45rem 0.75rem;">
             Reset checklist + saved fields
@@ -629,8 +739,13 @@ networks:
       </section>
 
       <footer>
-        <a href="./">tak-home docs</a> · <a href="auth-plan.html">Auth plan</a> · <a href="dev-move.html">Dev move</a>.
-        Auth stack: sibling <code>auth-home</code>. Domain + compose path above fill the copyable commands.
+        <a href="./">tak-home docs</a> ·
+        <a href="auth-plan.html">Auth plan</a> ·
+        <a href="dev-move.html">Dev move</a> ·
+        <a href="references.html">References</a> ·
+        <a href="security.html">Security</a>.
+        Auth is a sibling <code>auth-home</code> stack. The domain and compose fields above
+        fill into the copyable commands.
       </footer>
     </main>
   </div>
@@ -638,42 +753,42 @@ networks:
   <script>
     const STEPS = {
       setup: [
-        "Copied tak-home onto the server next to the shared compose file",
-        "Ran ./setup.sh &lt;domain&gt; -f … (secrets generated / preserved)",
-        "Chose map provider (-p trex default, or opentopomap)",
+        "Copied tak-home onto the server next to the shared Compose file",
+        "Ran ./setup.sh &lt;domain&gt; -f … (secrets generated or preserved)",
+        "Chose a map provider (-p trex by default, or opentopomap)",
       ],
       swag: [
-        "SWAG joined Docker network tak; published 443 + TAK stream ports",
+        "Joined SWAG to the tak Docker network and published 443 plus the TAK stream ports",
         "Installed cloudtak.conf in site-confs and tak-stream.conf in stream-confs",
-        "Added top-level stream { include … } in nginx.conf; nginx -t OK",
-        "DNS for map + tiles (+ auth) points at SWAG; tak left out of LE subdomains",
-        "CSP env set if using T.Rex CDN / Google; tak_api recreated",
+        "Added a top-level stream { include … } block in nginx.conf; nginx -t succeeded",
+        "Pointed DNS for map + tiles (+ auth) at SWAG; left tak out of Let’s Encrypt subdomains",
+        "Set CSP env vars if using T.Rex CDN / Google, then recreated tak_api",
       ],
       bringup: [
-        "tak_certs → tak_database → tak_server healthy",
-        "Copied root-ca.pem; started api/tiles/events/…/store/pmtiles",
-        "https://map…/api/server returns 401 (API reachable)",
+        "Brought up tak_certs → tak_database → tak_server and confirmed they are healthy",
+        "Copied root-ca.pem and started api / tiles / events / … / store / pmtiles",
+        "https://map…/api/server returns 401 (API reachable through SWAG)",
       ],
       maps: [
-        "Fetched / rendered basemap (if using local/hosted tiles)",
-        "Published to Garage; Hosted basemap uses {$z} and protocol hosted",
-        "Map paints T.Rex (or chosen provider) in CloudTAK",
+        "Fetched and rendered the basemap (if using local or hosted tiles)",
+        "Published to Garage; hosted basemap uses {$z} and protocol hosted",
+        "Map shows T.Rex (or the chosen provider) correctly in CloudTAK",
       ],
       enroll: [
-        "make-datapackage.sh with tak.&lt;domain&gt;",
-        "ATAK connected with package + TAK CA trust",
+        "Built a datapackage with make-datapackage.sh for tak.&lt;domain&gt;",
+        "Connected ATAK with the package and trusted the TAK private CA",
       ],
       auth: [
         "Ran auth-home ./setup.sh for the parent domain",
-        "docker compose up for lldap + authelia (+ optional admin profile)",
-        "Copied swag/auth.conf; ADMIN_EXPOSE set; nginx -t OK",
-        "CloudTAK OIDC enabled (enforce still off); SSO login works",
-        "CoreConfig oauth added; tak_server restarted; new SSO user gets a cert",
+        "Started LLDAP + Authelia (and the optional admin profile if needed)",
+        "Copied swag/auth.conf, set ADMIN_EXPOSE, and reloaded nginx after nginx -t",
+        "Enabled CloudTAK OIDC with enforce still off; SSO login works",
+        "Added CoreConfig oauth, restarted tak_server, and confirmed a new SSO user gets a cert",
       ],
       migrate: [
-        "migrate-users.sh dry-run looked right",
-        "Ran migrate with or without --migrate-plaintext-pass",
-        "SSO hits existing CloudTAK profiles; then enforce SSO if desired",
+        "Dry-run of migrate-users.sh looked correct",
+        "Ran migrate (with or without --migrate-plaintext-pass)",
+        "SSO maps onto existing CloudTAK profiles; enforced SSO only after that checked out",
       ],
     };
 
@@ -832,5 +947,6 @@ networks:
     sections.forEach((s) => io.observe(s));
     updateProgress();
   </script>
+  <script src="nav-mobile.js" defer></script>
 </body>
 </html>

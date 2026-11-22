@@ -235,6 +235,9 @@ Same Authelia + LLDAP can issue OIDC to anything that speaks Authorization Code.
 
 ## References
 
+Full image/project citations (containers, T.REX, OpenTopoMap, etc.): [references](./references.html).  
+Host hardening pointers: [security](./security.html).
+
 - CloudTAK OIDC: https://docs.cloudtak.io/admin/#single-sign-on-oidc
 - Authelia ↔ LLDAP: https://www.authelia.com/integration/ldap/lldap/
 - Authelia OIDC clients: https://www.authelia.com/integration/openid-connect/clients/

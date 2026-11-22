@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Security reminders · tak-home</title>
+  <meta name="description" content="Security reminders — tak-home docs" />
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+  <link rel="icon" href="favicon.ico" sizes="any" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Schibsted+Grotesk:wght@600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="site.css" />
+</head>
+<body>
+  <div class="wrap">
+    <aside class="side">
+      <a class="brand" href="./"><img src="logo.png" width="28" height="28" alt="" />tak-home</a>
+      <ul class="nav-links">
+        <li><a href="./">Home</a></li>
+        <li><a href="setup-guide.html">Setup guide</a></li>
+        <li><a href="auth-plan.html">Auth plan</a></li>
+        <li><a href="dev-move.html">Dev move</a></li>
+        <li><a href="references.html">References</a></li>
+        <li><a href="security.html" aria-current="page">Security</a></li>
+      </ul>
+      <span class="toc-label">On this page</span>
+<ul class="toc">
+<li class="toc-h2"><a href="#start-with-established-guidance">Start with established guidance</a></li>
+<li class="toc-h2"><a href="#stack-specific-reminders">Stack-specific reminders</a></li>
+<li class="toc-h3"><a href="#network-certificates">Network & certificates</a></li>
+<li class="toc-h3"><a href="#auth-admin-surfaces">Auth & admin surfaces</a></li>
+<li class="toc-h3"><a href="#data-maps">Data & maps</a></li>
+<li class="toc-h3"><a href="#updates-supply-chain">Updates & supply chain</a></li>
+<li class="toc-h3"><a href="#logging-access">Logging & access</a></li>
+<li class="toc-h2"><a href="#when-something-looks-wrong">When something looks wrong</a></li>
+</ul>
+    </aside>
+    <main>
+      <article>
+<h1 id="security-reminders">Security reminders</h1>
+<p>This is <strong>not</strong> a full hardening audit. It is a short checklist for operators running <strong>tak-home</strong> / <strong>auth-home</strong> on a self-hosted box, plus links to guides that already do the deep work well.</p>
+<h2 id="start-with-established-guidance">Start with established guidance</h2>
+<p>Read (and periodically revisit) at least one of these:</p>
+<table>
+<thead>
+<tr>
+<th>Guide</th>
+<th>Why</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><a href="https://csrc.nist.gov/pubs/sp/800/190/final">NIST SP 800-190 — Application Container Security Guide</a></td>
+<td>Vendor-neutral container threat model and controls</td>
+</tr>
+<tr>
+<td><a href="https://www.cisecurity.org/benchmark/docker">CIS Docker Benchmark</a></td>
+<td>Prescriptive host / daemon / runtime / image checks (CIS membership or purchase for the full PDF; many tools implement the controls)</td>
+</tr>
+<tr>
+<td><a href="https://docs.docker.com/engine/security/">Docker Engine security</a></td>
+<td>Official Docker security overview and feature docs</td>
+</tr>
+<tr>
+<td><a href="https://www.cisa.gov/cybersecurity-best-practices">CISA — Cybersecurity Best Practices</a></td>
+<td>General org/host hygiene (patching, MFA, backups, logging)</td>
+</tr>
+</tbody></table>
+<p>If the Docker host is Linux, also apply a <strong>host</strong> benchmark (for example <a href="https://www.cisecurity.org/benchmark/ubuntu_linux">CIS Ubuntu</a> or your distro’s equivalent) before worrying about fancy container flags.</p>
+<h2 id="stack-specific-reminders">Stack-specific reminders</h2>
+<h3 id="network-certificates">Network & certificates</h3>
+<ul>
+<li>Keep <strong>two certificate worlds</strong> separate: SWAG/Let’s Encrypt for <code>map</code> / <code>tiles</code> / <code>auth</code>; TAK private CA for ATAK ports. Do not drop TAK <code>*.pem</code> / <code>*.p12</code> into SWAG <code>/config/keys</code>.</li>
+<li>Leave <code>tak</code> out of Let’s Encrypt <code>SUBDOMAINS</code>. Stream-proxy TAK ports without terminating TLS on SWAG.</li>
+<li>Prefer publishing <strong>only</strong> what SWAG needs on the host (443 + TAK stream ports). Do not publish LLDAP/Authelia admin ports unless you deliberately used <code>--no-swag</code>.</li>
+</ul>
+<h3 id="auth-admin-surfaces">Auth & admin surfaces</h3>
+<ul>
+<li>Run Authelia/LLDAP from <strong>auth-home</strong>, not inside the TAK profile lifecycle.</li>
+<li>Keep Authelia login reachable for SSO; lock <strong>admin</strong> UIs (<code>/auth-admin/</code>, LLDAP UI) with <code>--admin-expose</code> (<code>subnet</code>, <code>localhost</code>, or <code>tailscale</code> — avoid <code>public</code> unless you accept the risk).</li>
+<li>Leave CloudTAK <strong>Enforce SSO</strong> off until login works. Keep a break-glass path (<code>oidc::enforced</code> false via admin API or DB) documented offline.</li>
+<li>Treat <code>config/secrets.env</code>, <code>config/cloudtak.env</code>, <code>config/authelia.secrets.env</code>, and OIDC client secrets as credentials: mode <code>600</code>, never commit, rotate if leaked.</li>
+</ul>
+<h3 id="data-maps">Data & maps</h3>
+<ul>
+<li>Garage and PostGIS hold operational data — include them in backup/restore drills, not only Compose YAML.</li>
+<li>T.REX sprites are proprietary local assets; do not publish <code>maps/data/sprites/</code> to a public git remote.</li>
+<li>CSP (<code>NGINX_CSP_*</code>) is allowlisting remote tile hosts. Adding wildcards or overly broad hosts weakens XSS defenses in the map UI.</li>
+</ul>
+<h3 id="updates-supply-chain">Updates & supply chain</h3>
+<ul>
+<li>Pin or knowingly float image tags; re-read release notes for TAK Server, CloudTAK, Authelia, and LLDAP before upgrading.</li>
+<li>Pull images from the vendors listed on the <a href="references.html">references</a> page; avoid unmarked mirrors.</li>
+<li>After upgrades, re-test SSO, ATAK enroll, and map paint before calling the host “done.”</li>
+</ul>
+<h3 id="logging-access">Logging & access</h3>
+<ul>
+<li>Restrict SSH (keys only, no password root login, optional Tailscale/bastion).</li>
+<li>Keep SWAG and Docker logs somewhere you will actually look (disk rotation or remote syslog).</li>
+<li>Limit who can run <code>docker</code> / <code>docker compose</code> on the host — that group is effectively root.</li>
+</ul>
+<h2 id="when-something-looks-wrong">When something looks wrong</h2>
+<ol>
+<li>Confirm you are on the intended Compose project and network (<code>tak</code> / <code>auth</code>).</li>
+<li>Check SWAG <code>nginx -t</code> and access/error logs before rebuilding app containers.</li>
+<li>For SSO lockouts, disable enforce first, then fix IdP claims (<code>email</code> required for CloudTAK).</li>
+</ol>
+<p>Questions about <em>why</em> auth is a separate stack live in the <a href="auth-plan.html">auth plan</a>. Operator steps are in the <a href="./setup-guide.html">setup guide</a>.</p>
+
+      </article>
+      <footer class="doc-foot">
+        <a href="./">docs home</a>
+        · <a href="https://github.com/TobiTenno/tak-home">GitHub</a>
+      </footer>
+    </main>
+  </div>
+  <script src="nav-mobile.js" defer></script>
+</body>
+</html>

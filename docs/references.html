@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>References & citations · tak-home</title>
+  <meta name="description" content="References & citations — tak-home docs" />
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+  <link rel="icon" href="favicon.ico" sizes="any" />
+  <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Schibsted+Grotesk:wght@600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="site.css" />
+</head>
+<body>
+  <div class="wrap">
+    <aside class="side">
+      <a class="brand" href="./"><img src="logo.png" width="28" height="28" alt="" />tak-home</a>
+      <ul class="nav-links">
+        <li><a href="./">Home</a></li>
+        <li><a href="setup-guide.html">Setup guide</a></li>
+        <li><a href="auth-plan.html">Auth plan</a></li>
+        <li><a href="dev-move.html">Dev move</a></li>
+        <li><a href="references.html" aria-current="page">References</a></li>
+        <li><a href="security.html">Security</a></li>
+      </ul>
+      <span class="toc-label">On this page</span>
+<ul class="toc">
+<li class="toc-h2"><a href="#tak-server-tak-product-center">TAK Server (TAK Product Center)</a></li>
+<li class="toc-h2"><a href="#cloudtak-dfpc-coe">CloudTAK (DFPC CoE)</a></li>
+<li class="toc-h2"><a href="#object-storage-gis-db-local-pmtiles">Object storage, GIS DB, local PMTiles</a></li>
+<li class="toc-h2"><a href="#auth-stack-auth-home">Auth stack (`auth-home`)</a></li>
+<li class="toc-h2"><a href="#reverse-proxy-operator-provided">Reverse proxy (operator-provided)</a></li>
+<li class="toc-h2"><a href="#map-data-providers">Map data & providers</a></li>
+<li class="toc-h3"><a href="#trex-arms-maps-default-provider-trex">T.REX ARMS Maps (default provider `trex`)</a></li>
+<li class="toc-h3"><a href="#opentopomap-provider-opentopomap">OpenTopoMap (provider `opentopomap`)</a></li>
+<li class="toc-h3"><a href="#optional-google-basemap-layers">Optional Google basemap layers</a></li>
+<li class="toc-h2"><a href="#other-docs-in-this-site">Other docs in this site</a></li>
+</ul>
+    </aside>
+    <main>
+      <article>
+<h1 id="references-citations">References & citations</h1>
+<p>Where the images, projects, and map data in <strong>tak-home</strong> / <strong>auth-home</strong> come from.<br>Tag versions below match the Compose files at the time of writing — check <code>compose.yaml</code> for what you are actually running.</p>
+<h2 id="tak-server-tak-product-center">TAK Server (TAK Product Center)</h2>
+<p>Official U.S. government TAK Product Center images on Docker Hub:</p>
+<table>
+<thead>
+<tr>
+<th>Container</th>
+<th>Image</th>
+<th>Upstream</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>tak_certs</code></td>
+<td><code>takproductcenter/takserver-ca:5.8-RELEASE-92</code></td>
+<td><a href="https://hub.docker.com/r/takproductcenter/takserver-ca">takserver-ca</a></td>
+</tr>
+<tr>
+<td><code>tak_database</code></td>
+<td><code>takproductcenter/takserver-hardened-db:5.8-RELEASE-92</code></td>
+<td><a href="https://hub.docker.com/r/takproductcenter/takserver-hardened-db">takserver-hardened-db</a></td>
+</tr>
+<tr>
+<td><code>tak_server</code></td>
+<td><code>takproductcenter/takserver-hardened:5.8-RELEASE-92</code></td>
+<td><a href="https://hub.docker.com/r/takproductcenter/takserver-hardened">takserver-hardened</a></td>
+</tr>
+</tbody></table>
+<ul>
+<li>TAK Product Center: <a href="https://tak.gov/">tak.gov</a> · <a href="https://github.com/TAK-Product-Center">GitHub org</a></li>
+<li>TAK Server source: <a href="https://github.com/TAK-Product-Center/Server">TAK-Product-Center/Server</a></li>
+<li>ATAK-CIV: <a href="https://github.com/TAK-Product-Center/atak-civ">TAK-Product-Center/atak-civ</a></li>
+</ul>
+<h2 id="cloudtak-dfpc-coe">CloudTAK (DFPC CoE)</h2>
+<p>Colorado DFPC Center of Excellence CloudTAK stack (GHCR):</p>
+<table>
+<thead>
+<tr>
+<th>Container</th>
+<th>Image</th>
+<th>Upstream</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>tak_api</code></td>
+<td><code>ghcr.io/dfpc-coe/cloudtak-api:v13.113.0</code></td>
+<td><a href="https://github.com/dfpc-coe/CloudTAK">cloudtak-api</a></td>
+</tr>
+<tr>
+<td><code>tak_tiles</code></td>
+<td><code>ghcr.io/dfpc-coe/cloudtak-pmtiles:v13.113.0</code></td>
+<td>same monorepo / packages</td>
+</tr>
+<tr>
+<td><code>tak_events</code></td>
+<td><code>ghcr.io/dfpc-coe/cloudtak-events:v13.113.0</code></td>
+<td></td>
+</tr>
+<tr>
+<td><code>tak_retention</code></td>
+<td><code>ghcr.io/dfpc-coe/cloudtak-retention:v13.113.0</code></td>
+<td></td>
+</tr>
+<tr>
+<td><code>tak_media</code></td>
+<td><code>ghcr.io/dfpc-coe/media-infra:v9.10.0</code></td>
+<td><a href="https://github.com/dfpc-coe">media-infra</a> packages</td>
+</tr>
+</tbody></table>
+<ul>
+<li>Docs: <a href="https://docs.cloudtak.org/">docs.cloudtak.org</a> (OIDC admin notes linked from the <a href="auth-plan.html">auth plan</a>)</li>
+<li>Org: <a href="https://github.com/dfpc-coe">github.com/dfpc-coe</a></li>
+</ul>
+<h2 id="object-storage-gis-db-local-pmtiles">Object storage, GIS DB, local PMTiles</h2>
+<table>
+<thead>
+<tr>
+<th>Container</th>
+<th>Image</th>
+<th>Upstream</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>tak_store</code></td>
+<td><code>dxflrs/garage:v2.4.1</code></td>
+<td><a href="https://garagehq.deuxfleurs.fr/">Garage</a> · <a href="https://git.deuxfleurs.fr/Deuxfleurs/garage">GitHub</a></td>
+</tr>
+<tr>
+<td><code>tak_postgis</code></td>
+<td><code>postgis/postgis:17-3.4-alpine</code></td>
+<td><a href="https://registry.hub.docker.com/r/postgis/postgis">PostGIS Docker</a> · <a href="https://postgis.net/">postgis.net</a></td>
+</tr>
+<tr>
+<td><code>tak_pmtiles</code></td>
+<td><code>nginx:1.28-alpine</code></td>
+<td><a href="https://nginx.org/">nginx</a> · <a href="https://hub.docker.com/_/nginx">Official image</a></td>
+</tr>
+</tbody></table>
+<p>Garage serves CloudTAK <strong>Hosted</strong> PMTiles (<code>s3://…/public/*.pmtiles</code>). The nginx <code>tak_pmtiles</code> service only exposes files under <code>maps/data/</code> for same-origin <code>/pmtiles/</code> on the map host.</p>
+<h2 id="auth-stack-auth-home">Auth stack (`auth-home`)</h2>
+<table>
+<thead>
+<tr>
+<th>Container</th>
+<th>Image</th>
+<th>Upstream</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>auth_lldap</code></td>
+<td><code>lldap/lldap:stable</code></td>
+<td><a href="https://github.com/lldap/lldap">LLDAP</a></td>
+</tr>
+<tr>
+<td><code>auth_authelia</code></td>
+<td><code>authelia/authelia:latest</code></td>
+<td><a href="https://www.authelia.com/">Authelia</a> · <a href="https://github.com/authelia/authelia">GitHub</a></td>
+</tr>
+<tr>
+<td><code>auth_authelia_admin</code></td>
+<td><code>ghcr.io/asalimonov/authelia-admin:latest</code></td>
+<td><a href="https://github.com/asalimonov/authelia-admin">authelia-admin</a></td>
+</tr>
+</tbody></table>
+<p>Integration notes we follow:</p>
+<ul>
+<li>Authelia ↔ LLDAP: <a href="https://www.authelia.com/integration/ldap/lldap/">authelia.com/integration/ldap/lldap</a></li>
+<li>OIDC clients: <a href="https://www.authelia.com/integration/openid-connect/clients/">authelia.com/integration/openid-connect/clients</a></li>
+</ul>
+<h2 id="reverse-proxy-operator-provided">Reverse proxy (operator-provided)</h2>
+<p>This repo does not ship the SWAG container, but the setup guide assumes <a href="https://docs.linuxserver.io/images/docker-swag/">linuxserver/swag</a> (Let&#39;s Encrypt + nginx).<br>Image: <a href="https://fleet.linuxserver.io/image?name=linuxserver/swag">lscr.io/linuxserver/swag</a>.</p>
+<h2 id="map-data-providers">Map data & providers</h2>
+<h3 id="trex-arms-maps-default-provider-trex">T.REX ARMS Maps (default provider `trex`)</h3>
+<p><code>maps/providers/trex/</code> downloads regional extracts and (optionally) sprites from <strong>T.REX ARMS</strong> tile hosts.</p>
+<table>
+<thead>
+<tr>
+<th>Resource</th>
+<th>URL</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Map server (print / export UI)</td>
+<td><a href="https://maps.trex-arms.com/">maps.trex-arms.com</a></td>
+</tr>
+<tr>
+<td>Tile / archive base used by fetch</td>
+<td><code>https://tiles.trex-arms.com/maps</code> (see <code>maps/providers/trex/fetch.sh</code>)</td>
+</tr>
+<tr>
+<td>Company / product notes</td>
+<td><a href="https://www.trex-arms.com/">trex-arms.com</a></td>
+</tr>
+</tbody></table>
+<p>Attribution strings baked into generated basemaps typically credit OpenStreetMap, OpenMapTiles, and related open/public-domain layers compiled by T.REX ARMS. <strong>Sprites under <code>maps/data/sprites/</code> are proprietary T.REX assets for local deploy only — do not commit or redistribute.</strong> Operators are responsible for complying with T.REX ARMS terms for any data they fetch.</p>
+<p>Tool used for extracts: <a href="https://github.com/protomaps/go-pmtiles">protomaps/go-pmtiles</a> (<code>protomaps/go-pmtiles</code> image).</p>
+<h3 id="opentopomap-provider-opentopomap">OpenTopoMap (provider `opentopomap`)</h3>
+<p>Remote ZXY raster layer — nothing is downloaded into <code>maps/data/</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Resource</th>
+<th>URL</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Tiles</td>
+<td><code>https://tile.opentopomap.org/{$z}/{$x}/{$y}.png</code></td>
+</tr>
+<tr>
+<td>Project</td>
+<td><a href="https://opentopomap.org/">opentopomap.org</a></td>
+</tr>
+<tr>
+<td>License / attribution</td>
+<td>OpenStreetMap data; see their site for current tile usage policy</td>
+</tr>
+</tbody></table>
+<h3 id="optional-google-basemap-layers">Optional Google basemap layers</h3>
+<p>CloudTAK can show Google slippy layers when CSP allows <code>mt*</code> / <code>khms*</code> hosts (see <code>config/cloudtak.env.template</code>). Those tiles are <strong>Google’s</strong>, not part of this repo. Follow <a href="https://cloud.google.com/maps-platform/terms">Google Maps Platform / Maps terms</a> for any production use.</p>
+<h2 id="other-docs-in-this-site">Other docs in this site</h2>
+<ul>
+<li><a href="./setup-guide.html">Setup guide</a></li>
+<li><a href="auth-plan.html">Auth plan</a></li>
+<li><a href="security.html">Security reminders</a></li>
+<li><a href="dev-move.html">Dev move</a></li>
+</ul>
+
+      </article>
+      <footer class="doc-foot">
+        <a href="./">docs home</a>
+        · <a href="https://github.com/TobiTenno/tak-home">GitHub</a>
+      </footer>
+    </main>
+  </div>
+  <script src="nav-mobile.js" defer></script>
+</body>
+</html>

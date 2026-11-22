@@ -31,6 +31,8 @@ const SITE_LINKS = [
   ["setup-guide.html", "Setup guide"],
   ["auth-plan.html", "Auth plan"],
   ["dev-move.html", "Dev move"],
+  ["references.html", "References"],
+  ["security.html", "Security"],
 ];
 
 function slugify(value) {
@@ -43,11 +45,20 @@ function slugify(value) {
 }
 
 function rewriteLinks(html) {
-  return html
-    .replaceAll('href="AUTH-PLAN.md"', 'href="auth-plan.html"')
-    .replaceAll('href="./AUTH-PLAN.md"', 'href="auth-plan.html"')
-    .replaceAll('href="DEV-MOVE.md"', 'href="dev-move.html"')
-    .replaceAll('href="./DEV-MOVE.md"', 'href="dev-move.html"');
+  const pairs = [
+    ["AUTH-PLAN.md", "auth-plan.html"],
+    ["DEV-MOVE.md", "dev-move.html"],
+    ["REFERENCES.md", "references.html"],
+    ["SECURITY.md", "security.html"],
+    ["references.html", "references.html"],
+    ["security.html", "security.html"],
+  ];
+  let out = html;
+  for (const [md, htmlName] of pairs) {
+    out = out.replaceAll(`href="${md}"`, `href="${htmlName}"`);
+    out = out.replaceAll(`href="./${md}"`, `href="${htmlName}"`);
+  }
+  return out;
 }
 
 function extractToc(html) {
@@ -129,6 +140,7 @@ ${body}
       </footer>
     </main>
   </div>
+  <script src="nav-mobile.js" defer></script>
 </body>
 </html>
 `;

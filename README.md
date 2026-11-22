@@ -4,7 +4,7 @@
   <img src="docs/logo.png" alt="tak-home" width="128" height="128" />
 </p>
 
-Docs site: [tobitenno.github.io/tak-home](https://tobitenno.github.io/tak-home/) · [setup guide](docs/setup-guide.html) · [auth plan](docs/auth-plan.html) · [dev move](docs/dev-move.html) (sources: [`AUTH-PLAN.md`](docs/AUTH-PLAN.md), [`DEV-MOVE.md`](docs/DEV-MOVE.md)).
+Docs site: [tobitenno.github.io/tak-home](https://tobitenno.github.io/tak-home/) · [setup guide](docs/setup-guide.html) · [auth plan](docs/auth-plan.html) · [dev move](docs/dev-move.html) · [references](docs/references.html) · [security](docs/security.html).
 
 Copy this directory to the server. One argument sets the public names:
 
