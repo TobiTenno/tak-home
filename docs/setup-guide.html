@@ -618,11 +618,12 @@ networks:
         <pre data-domain><code>./setup.sh example.com -f ../docker-compose.yml --admin-expose tailscale</code></pre>
         <pre data-domain><code>./setup.sh example.com --no-swag</code></pre>
         <p>
-          With <code>-f</code>, setup copies the stack next to that Compose file as
-          <code>auth-home/</code> (same idea as tak-home), adds an include for
+          With <code>-f</code>, setup writes a <strong>runtime</strong>
+          <code>auth-home/</code> next to that Compose file (compose, scripts, generated
+          env/YAML — not <code>templates/</code>), adds an include for
           <code>auth-home/compose.yaml</code>, ensures the root networks
           <code>auth</code> and <code>tak</code> exist, and attaches the
-          <code>swag</code> service to both.
+          <code>swag</code> service to both. Always run setup from the git clone.
           Use <code>--admin-expose</code> with
           <code>subnet</code>, <code>localhost</code>, <code>tailscale</code>, or
           <code>public</code> to control who can reach the admin UIs.
@@ -630,6 +631,15 @@ networks:
           instead of relying on the proxy.
           Containers are named <code>auth_lldap</code>, <code>auth_authelia</code>, and
           (optionally) <code>auth_authelia_admin</code>.
+        </p>
+        <p><strong>By name</strong> (preferred on a shared root Compose — same idea as TAK):</p>
+        <pre data-domain><code>docker compose up -d auth_lldap auth_authelia</code></pre>
+        <pre data-domain><code>docker compose up -d auth_lldap auth_authelia auth_authelia_admin</code></pre>
+        <pre data-domain><code>docker compose -f compose.yaml -f compose.no-swag.yaml up -d auth_lldap auth_authelia</code></pre>
+        <p>
+          <strong>By profile</strong> (fine in a standalone auth-home project). On a shared
+          root Compose file, <code>--profile auth</code> also starts every service that has
+          no profile:
         </p>
         <pre data-domain><code>docker compose --profile auth up -d</code></pre>
         <pre data-domain><code>docker compose --profile auth --profile admin up -d</code></pre>
@@ -780,7 +790,7 @@ networks:
       ],
       auth: [
         "Ran auth-home ./setup.sh for the parent domain",
-        "Started LLDAP + Authelia (and the optional admin profile if needed)",
+        "Started auth_lldap + auth_authelia by name (and auth_authelia_admin if needed)",
         "Copied swag/auth.conf, set ADMIN_EXPOSE, and reloaded nginx after nginx -t",
         "Enabled CloudTAK OIDC with enforce still off; SSO login works",
         "Added CoreConfig oauth, restarted tak_server, and confirmed a new SSO user gets a cert",
